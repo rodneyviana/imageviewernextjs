@@ -20,7 +20,278 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f4f4;
+  color: #222;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
 }
+
+button {
+  border: none;
+  background: #eee;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #ccc;
+}
+
+input[type="checkbox"] {
+  accent-color: #0070f3;
+}
+
+/* Explorer Main Layout */
+.explorer-main {
+  display: flex;
+  height: 100vh;
+}
+.explorer-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.explorer-toolbar {
+  padding: 8px;
+  background: #eee;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.explorer-viewer {
+  flex: 1;
+  display: flex;
+}
+
+/* Image Viewer */
+.image-viewer {
+  flex: 1;
+  position: relative;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.image-viewer-img, .image-viewer-video {
+  max-height: 70vh;
+  max-width: 80vw;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #0008;
+  display: block;
+}
+.image-viewer-actions {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+.image-viewer:hover .image-viewer-actions {
+  opacity: 1;
+}
+.image-viewer-nav-left, .image-viewer-nav-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 32px;
+  opacity: 0;
+  background: rgba(0,0,0,0.2);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: opacity 0.2s;
+}
+.image-viewer:hover .image-viewer-nav-left,
+.image-viewer:hover .image-viewer-nav-right {
+  opacity: 1;
+}
+.image-viewer-nav-left {
+  left: 16px;
+}
+.image-viewer-nav-right {
+  right: 16px;
+}
+.image-viewer-meta {
+  margin-top: 16px;
+  background: #333;
+  padding: 12px;
+  border-radius: 8px;
+  min-width: 300px;
+  max-width: 500px;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+.image-viewer-meta-title {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.metadata-json {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  background: #2a2a2a;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* HEIC Notice */
+.heic-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: #2a2a2a;
+  border: 2px dashed #555;
+  border-radius: 8px;
+  margin: 20px 0;
+  padding: 20px;
+  text-align: center;
+}
+
+.heic-notice p {
+  margin-bottom: 15px;
+  color: #ccc;
+}
+
+.heic-notice button {
+  background: #0070f3;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.heic-notice button:hover {
+  background: #0056b3;
+}
+
+/* Delete Confirm Dialog */
+.delete-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.delete-confirm-box {
+  background: #fff;
+  color: #222;
+  padding: 32px;
+  border-radius: 12px;
+  min-width: 300px;
+}
+.delete-confirm-message {
+  margin-bottom: 16px;
+}
+.delete-confirm-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+}
+.delete-confirm-danger {
+  background: red;
+  color: #fff;
+}
+.no-image-selected {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Explorer Sidebar */
+.explorer-sidebar {
+  width: 300px;
+  min-width: 120px;
+  max-width: 600px;
+  border-right: 1px solid #ccc;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: auto;
+  background: #f8f8f8;
+  resize: horizontal;
+  box-sizing: border-box;
+}
+.explorer-tree-container {
+  min-width: 100%;
+  width: max-content;
+  overflow-x: auto;
+}
+.explorer-sidebar-header {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.explorer-sidebar-title {
+  font-weight: bold;
+}
+.folder, .file {
+  cursor: pointer;
+}
+.folder-selected, .file-selected {
+  background: #dbeafe;
+  color: #1e40af;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.folder, .file, .folder-selected, .file-selected {
+  white-space: nowrap;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  padding-right: 8px;
+}
+.folder-row {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.folder-arrow {
+  margin-right: 4px;
+  width: 16px;
+  display: inline-block;
+  text-align: center;
+}
+.folder-indent-level-0 { padding-left: 0; }
+.folder-indent-level-1 { padding-left: 16px; }
+.folder-indent-level-2 { padding-left: 32px; }
+.folder-indent-level-3 { padding-left: 48px; }
+.folder-indent-level-4 { padding-left: 64px; }
+.folder-indent-level-5 { padding-left: 80px; }
+.folder-indent-level-6 { padding-left: 96px; }
+.folder-indent-level-7 { padding-left: 112px; }
+.folder-indent-level-8 { padding-left: 128px; }
+.folder-indent-level-9 { padding-left: 144px; }
+.folder-indent-level-10 { padding-left: 160px; }

@@ -1,4 +1,18 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Image Viewer with Metadata
+
+A modern web-based image viewer built with Next.js that allows you to browse and view images with detailed metadata display. The application supports various image formats and displays EXIF data, file information, and other metadata in an easy-to-read format.
+
+## Features
+
+- 📁 Directory browsing with file explorer interface
+- 🖼️ Support for various image formats (JPEG, PNG, GIF, WebP, HEIC, etc.)
+- 🎥 Video file support with preview capabilities
+- 📊 Detailed metadata display including EXIF data
+- 🔍 Full-page image viewing
+- 💻 Modern, responsive design with dark theme
+- ⚡ Fast file serving and caching
+
+This is a [Next.js](https://nextjs.org) project.
 
 ## Getting Started
 
