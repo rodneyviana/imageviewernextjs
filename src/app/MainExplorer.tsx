@@ -12,9 +12,9 @@ interface ImageViewerProps {
   onFlagNSFW: (file: string, flag: boolean) => void;
   onFileChange: (file: string) => void;
 }
-interface ImageViewerState { metadata: any; }
+interface ImageViewerState { metadata: any; loading: boolean; }
 class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
-  state: ImageViewerState = { metadata: null };
+  state: ImageViewerState = { metadata: null, loading: false };
 
   fetchMetadata(path: string) {
     fetch(`/api/metadata?file=${encodeURIComponent(path)}`)
@@ -25,7 +25,13 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
 
   componentDidMount() {
     const file = this.props.files[this.props.currentIdx];
-    if (file) this.fetchMetadata(file.path);
+    if (file) {
+      this.fetchMetadata(file.path);
+      // Show overlay if HEIC
+      if (file.name.toLowerCase().endsWith('.heic')) {
+        this.setState({ loading: true });
+      }
+    }
     document.addEventListener('keydown', this.handleKeyDown);
   }
 
@@ -35,6 +41,8 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
     if (file && file.path !== prevFile?.path) {
       this.fetchMetadata(file.path);
       this.props.onFileChange(file.path);
+      // Show overlay on new HEIC
+      this.setState({ loading: file.name.toLowerCase().endsWith('.heic') });
     }
   }
 
@@ -79,12 +87,14 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
     }
   };
 
+  handleImageLoad = () => {
+    this.setState({ loading: false });
+  };
+
   render() {
     const { files, currentIdx, showNSFW, onDelete, onFlagNSFW } = this.props;
-    const { metadata } = this.state;
+    const { metadata, loading } = this.state;
     const file = files[currentIdx];
-    if (!file) return <div className="no-image-selected">No image selected</div>;
-    if (file.nsfwFlagged && !showNSFW) return <div className="no-image-selected">NSFW content hidden</div>;
     const ext = file.name.split('.').pop()?.toLowerCase();
     const isImage = ['jpeg','jpg','png','gif','bmp','webp'].includes(ext!);
     const isVideo = ['mp4','mpeg','wav','mov','avi','webm'].includes(ext!);
@@ -92,6 +102,13 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
 
     return (
       <div className="image-viewer relative z-10">
+        {/* Overlay when converting HEIC */}
+        {isHeic && loading && (
+          <div className="converting-overlay">
+            <div>Converting image</div>
+            <div className="pulsing-dots"><span></span><span></span><span></span></div>
+          </div>
+        )}
         <div className="image-viewer-actions">
           <button 
             onClick={this.handlePrevious} 
@@ -118,12 +135,14 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
           </button>
           <button onClick={() => onDelete(file.path)} title="Delete">🗑️</button>
         </div>
+        {/* Always render image (converted HEIC or other) and hide until loaded */}
         {(isImage || isHeic) && (
           <img
             ref={this.imageRef}
             src={`/api/view?file=${encodeURIComponent(file.path)}`}
             alt={file.name}
-            className="image-viewer-img"
+            className={`image-viewer-img ${loading ? 'invisible' : ''}`}
+            onLoad={this.handleImageLoad}
           />
         )}
         {isVideo && (
