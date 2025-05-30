@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import convert from 'heic-convert';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -44,9 +45,19 @@ export async function GET(req: NextRequest) {
       case '.webm':
         contentType = 'video/webm';
         break;
-      case '.heic':
-        contentType = 'image/heic';
-        break;
+      // HEIC will be handled separately via conversion
+    }
+    
+    // If HEIC, convert to JPEG for browser viewing
+    if (ext === '.heic') {
+      const inputBuffer = fs.readFileSync(file);
+      const outputBuffer = await convert({ buffer: inputBuffer, format: 'JPEG', quality: 1 });
+      return new Response(outputBuffer, {
+        headers: {
+          'Content-Type': 'image/jpeg',
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        }
+      });
     }
     
     const stream = fs.createReadStream(file);

@@ -1,103 +1,155 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
-import { useFolders } from './hooks';
+import React from 'react';
 
-function FolderTree({ tree, onSelect, selected, showNSFW, onCacheClearReady }: any) {
-  const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
-  const [folderChildren, setFolderChildren] = useState<{ [key: string]: any[] }>({});
-  
-  // Expose cache clearing function to parent
-  const clearCache = React.useCallback(() => {
+// Define state interface for FolderTree
+interface FolderTreeState {
+  expanded: Record<string, boolean>;
+  folderChildren: Record<string, any[]>;
+}
+
+// Revert FolderTree to internal expanded state
+class FolderTree extends React.Component<any, FolderTreeState> {
+  state: FolderTreeState = { expanded: {}, folderChildren: {} };
+
+  clearCache = () => {
     console.log('FolderTree: Clearing folderChildren cache');
-    setFolderChildren({});
-  }, []);
-  
-  React.useEffect(() => {
-    if (onCacheClearReady) {
-      onCacheClearReady(clearCache);
+    this.setState({ folderChildren: {} });
+  };
+
+  componentDidMount() {
+    const { onCacheClearReady } = this.props;
+    if (onCacheClearReady) onCacheClearReady(this.clearCache);
+  }
+
+  componentDidUpdate(prevProps: any, prevState: FolderTreeState) {
+    if (prevProps.showNSFW !== this.props.showNSFW) {
+      this.clearCache();
     }
-  }, [onCacheClearReady, clearCache]);
-  
-  // Clear folderChildren cache when showNSFW changes to force refresh of NSFW flags
-  React.useEffect(() => {
-    clearCache();
-  }, [showNSFW, clearCache]);
-  
-  const handleToggle = async (path: string) => {
-    const newExpanded = { ...expanded, [path]: !expanded[path] };
-    setExpanded(newExpanded);
-      // If opening a folder and we don't have its children yet, load them
-    if (newExpanded[path] && !folderChildren[path]) {      try {
-        const res = await fetch(`/api/children?folder=${encodeURIComponent(path)}`);
-        const data = await res.json();
-        
-        // API already returns sorted data, no need to sort again
-        const children = data.children || [];
-        
-        setFolderChildren(prev => ({ ...prev, [path]: children }));
-      } catch (e) {
-        console.error('Failed to load folder children:', e);
+    // Load children on expansion
+    Object.keys(this.state.expanded).forEach(path => {
+      if (this.state.expanded[path] && !prevState.expanded[path]) {
+        this.loadChildren(path);
       }
+    });
+  }
+
+  // Toggle internal expanded state
+  handleToggle = (path: string) => {
+    this.setState(prev => ({ expanded: { ...prev.expanded, [path]: !prev.expanded[path] } }));
+  };
+
+  // Fetch and store children for a given folder path
+  loadChildren = async (path: string) => {
+    try {
+      const res = await fetch(`/api/children?folder=${encodeURIComponent(path)}`);
+      const data = await res.json();
+      this.setState(prev => ({ folderChildren: { ...prev.folderChildren, [path]: data.children || [] } }));
+    } catch (e) {
+      console.error('Failed to load folder children:', e);
     }
   };
 
-  const getIndentClass = (level: number) => `folder-indent-level-${Math.min(level, 10)}`;
+  getIndentClass(level: number) {
+    return `folder-indent-level-${Math.min(level, 10)}`;
+  }
 
-  const renderNode = (node: any, level = 0) => {
+  renderNode = (node: any, level = 0): React.ReactNode => {
+    const { folderChildren, expanded } = this.state;
+    const { onSelect, selected, showNSFW } = this.props;
     if (node.type === 'folder') {
       const isOpen = expanded[node.path];
       const children = folderChildren[node.path] || node.children || [];
       return (
-        <div key={node.path} className={getIndentClass(level)}>          <div
+        <div key={node.path} className={this.getIndentClass(level)}>
+          <div
             className={selected === node.path ? 'folder-selected folder-row' : 'folder folder-row'}
-            onClick={() => handleToggle(node.path)}
+            onClick={() => this.handleToggle(node.path)}
           >
             <span className="folder-icon">{isOpen ? '📂' : '📁'}</span>
             <span onClick={e => { e.stopPropagation(); onSelect(node.path); }}>{node.name}</span>
           </div>
-          {isOpen && children.map((child: any) => renderNode(child, level + 1))}
+          {isOpen && children.map((child: any) => this.renderNode(child, level + 1))}
         </div>
       );
     } else if (node.type === 'file') {
       if (!showNSFW && node.nsfwFlagged) return null;
       const icon = node.nsfwFlagged ? '🔒' : '🖼️';
       return (
-        <div key={node.path} className={getIndentClass(level + 2) + ' ' + (selected === node.path ? 'file-selected' : 'file')} onClick={() => onSelect(node.path)}>
+        <div
+          key={node.path}
+          className={this.getIndentClass(level + 2) + ' ' +
+            (selected === node.path ? 'file-selected' : 'file')}
+          onClick={() => onSelect(node.path)}
+        >
           {icon} {node.name}
         </div>
       );
-  }
+    }
     return null;
   };
-    return <div className="explorer-tree-container">{tree.map((node: any) => renderNode(node, 0))}</div>;
+
+  render() {
+    const { tree } = this.props;
+    return <div className="explorer-tree-container">{tree.map((node: any) => this.renderNode(node, 0))}</div>;
+  }
 }
 
-export default function ExplorerSidebar({ onSelect, selected, showNSFW, onRefreshReady }: any) {
-  const { tree, loading, refresh } = useFolders();
-  const [clearFolderCache, setClearFolderCache] = useState<(() => void) | null>(null);
-  
-  // Enhanced refresh that clears both tree and folder cache
-  const fullRefresh = React.useCallback(() => {
-    if (clearFolderCache) {
-      clearFolderCache();
-    }
-    refresh();
-  }, [refresh, clearFolderCache]);
-    // Expose refresh function to parent component
-  React.useEffect(() => {
-    console.log('ExplorerSidebar: Setting up refresh function for parent');
-    if (onRefreshReady && fullRefresh) {
-      onRefreshReady(fullRefresh);
-    }
-  }, [onRefreshReady, fullRefresh]);
-  
-  return (
-    <div className="explorer-sidebar">
-      <div className="explorer-sidebar-header">
-        <span className="explorer-sidebar-title">Root</span>
-        <button onClick={fullRefresh} title="Refresh">🔄</button>
+// Define state interface for ExplorerSidebar
+interface ExplorerSidebarState {
+  tree: any[];
+  loading: boolean;
+  clearFolderCache: (() => void) | null;
+}
+
+// Convert ExplorerSidebar to class component with state annotation
+export default class ExplorerSidebar extends React.Component<any, ExplorerSidebarState> {
+  state: ExplorerSidebarState = { tree: [], loading: true, clearFolderCache: null };
+
+  refresh = async () => {
+    this.setState({ loading: true });
+    const res = await fetch('/api/explorer');
+    const data = await res.json();
+    this.setState({ tree: data.tree || [], loading: false });
+  };
+
+  // Refresh tree without clearing folder cache (preserves expanded state)
+  fullRefresh = () => {
+    this.refresh();
+  };
+
+  componentDidMount() {
+    console.log('ExplorerSidebar: Component mounted, fetching tree');
+    this.refresh();
+    const { onRefreshReady } = this.props;
+    if (onRefreshReady) onRefreshReady(this.fullRefresh);
+  }
+
+  setCacheClear = (fn: () => void) => {
+    this.setState({ clearFolderCache: fn });
+  };
+
+  render() {
+    const { onSelect, selected, showNSFW } = this.props;
+    const { tree, loading } = this.state;
+
+    return (
+      <div className="explorer-sidebar">
+        <div className="explorer-sidebar-header">
+          <span className="explorer-sidebar-title">Root</span>
+          <button onClick={this.fullRefresh} title="Refresh">🔄</button>
+        </div>
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
+          <FolderTree
+            tree={tree}
+            onSelect={onSelect}
+            selected={selected}
+            showNSFW={showNSFW}
+            onCacheClearReady={this.setCacheClear}
+          />
+        )}
       </div>
-      {loading ? <div>Loading...</div> : <FolderTree tree={tree} onSelect={onSelect} selected={selected} showNSFW={showNSFW} onCacheClearReady={setClearFolderCache} />}
-    </div>
-  );
+    );
+  }
 }
