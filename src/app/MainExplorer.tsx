@@ -62,6 +62,23 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
     if (files[newIdx]) onFileChange(files[newIdx].path);
   };
 
+  // Ref for fullscreen
+  private imageRef = React.createRef<HTMLImageElement>();
+
+  // Enter fullscreen mode on image
+  handleFullscreen = () => {
+    const el = this.imageRef.current;
+    if (el) {
+      if (el.requestFullscreen) {
+        el.requestFullscreen();
+      } else if ((el as any).msRequestFullscreen) {
+        (el as any).msRequestFullscreen();
+      } else if ((el as any).webkitRequestFullscreen) {
+        (el as any).webkitRequestFullscreen();
+      }
+    }
+  };
+
   render() {
     const { files, currentIdx, showNSFW, onDelete, onFlagNSFW } = this.props;
     const { metadata } = this.state;
@@ -95,21 +112,26 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
           <span className="mx-2.5 text-xs">
             {this.props.currentIdx + 1} of {files.length}
           </span>        <button onClick={() => window.open(`/api/download?file=${encodeURIComponent(file.path)}`)} title="Download">⬇️</button>
-          <button onClick={() => window.open(`/api/view?file=${encodeURIComponent(file.path)}`, '_blank')} title="Full Page">🖥️</button>
+          <button onClick={this.handleFullscreen} title="Full Screen">⛶</button>
           <button onClick={() => onFlagNSFW(file.path, !file.nsfwFlagged)} title={file.nsfwFlagged ? "Unflag NSFW" : "Flag NSFW"}>
             {file.nsfwFlagged ? '🔓' : '🔒'}
           </button>
           <button onClick={() => onDelete(file.path)} title="Delete">🗑️</button>
         </div>
-        {isImage && <img src={`/api/view?file=${encodeURIComponent(file.path)}`} alt={file.name} className="image-viewer-img" />}
-        {isVideo && <video src={`/api/view?file=${encodeURIComponent(file.path)}`} controls className="image-viewer-video" />}
-        {isHeic && (
-          <div className="heic-notice">
-            <p>HEIC files are not directly supported in browsers.</p>
-            <button onClick={() => window.open(`/api/download?file=${encodeURIComponent(file.path)}`, '_blank')} title="Download to view">
-              📥 Download to View
-            </button>
-          </div>
+        {(isImage || isHeic) && (
+          <img
+            ref={this.imageRef}
+            src={`/api/view?file=${encodeURIComponent(file.path)}`}
+            alt={file.name}
+            className="image-viewer-img"
+          />
+        )}
+        {isVideo && (
+          <video
+            src={`/api/view?file=${encodeURIComponent(file.path)}`}
+            controls
+            className="image-viewer-video"
+          />
         )}        <div className="image-viewer-meta">
           <div className="image-viewer-meta-title">File: {file.name}</div>
           <div className="image-viewer-meta-title">Metadata</div>
@@ -129,9 +151,10 @@ interface MainExplorerState {
   currentIdx: number;
   children: any[];
   sidebarRefresh: (()=>void)|null;
+  expanded: Record<string, boolean>;
 }
 export default class MainExplorer extends React.Component<{}, MainExplorerState> {
-  state: MainExplorerState = { selected:null, showNSFW:false, confirmDelete:null, files: [], currentIdx:0, children: [], sidebarRefresh:null };
+  state: MainExplorerState = { selected:null, showNSFW:false, confirmDelete:null, files: [], currentIdx:0, children: [], sidebarRefresh:null, expanded: {} };
 
   componentDidMount() {
     document.addEventListener('keydown', this.handleKeyDown);
@@ -207,48 +230,65 @@ export default class MainExplorer extends React.Component<{}, MainExplorerState>
     await fetch(`/api/${endpoint}`, { method: 'POST', body: JSON.stringify({ file }), headers: { 'Content-Type':'application/json' } });
     const { files, currentIdx, sidebarRefresh } = this.state;
     const currentPath = files[currentIdx]?.path;
-    if (currentPath) this.setState({ selected: currentPath });
-    this.refreshChildren();
+    if (currentPath) this.refreshChildren();
     if (sidebarRefresh) sidebarRefresh();
   };
 
-  toggleShowNSFW = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ showNSFW: e.target.checked });
-  };
-
   render() {
-    const { selected, showNSFW, files, currentIdx, confirmDelete } = this.state;
+    const { files, currentIdx, showNSFW, confirmDelete, selected } = this.state;
+    const file = files[currentIdx];
+    const isImage = file && ['jpeg','jpg','png','gif','bmp','webp'].includes(file.name.split('.').pop()?.toLowerCase()!);
+    const isVideo = file && ['mp4','mpeg','wav','mov','avi','webm'].includes(file.name.split('.').pop()?.toLowerCase()!);
+    const isHeic = file && file.name.split('.').pop()?.toLowerCase() === 'heic';
+
     return (
-      <div className="explorer-main">
-        <ExplorerSidebar
-          onSelect={this.handleSelect}
+      <div className="main-explorer flex-1 flex overflow-hidden">
+        <ExplorerSidebar 
           selected={selected}
+          onSelect={this.handleSelect}
+          onRefresh={this.refreshChildren}
+          onSidebarRefresh={this.handleSidebarRefresh}
           showNSFW={showNSFW}
-          onRefreshReady={this.handleSidebarRefresh}
+          onToggleNSFW={() => this.setState({ showNSFW: !showNSFW })}
         />
-        <div className="explorer-content">
-          <div className="explorer-toolbar">
-            <label><input type="checkbox" checked={showNSFW} onChange={this.toggleShowNSFW} /> Show NSFW</label>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-shrink-0 p-4 bg-gray-800 text-white">
+            <h1 className="text-lg font-semibold">Image Viewer</h1>
           </div>
-          <div className="explorer-viewer">
-            <ImageViewer
-              files={files}
-              currentIdx={currentIdx}
-              setCurrentIdx={(idx)=>this.setState({currentIdx:idx})}
-              showNSFW={showNSFW}
-              onDelete={this.handleDelete}
-              onFlagNSFW={this.handleFlagNSFW}
-              onFileChange={(path)=>this.setState({selected:path})}
-            />
+          <div className="flex-1 overflow-auto">
+            {files.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">No files found</div>
+            ) : (
+              <ImageViewer
+                files={files}
+                currentIdx={currentIdx}
+                setCurrentIdx={(idx) => this.setState({ currentIdx: idx })}
+                showNSFW={showNSFW}
+                onDelete={this.handleDelete}
+                onFlagNSFW={this.handleFlagNSFW}
+                onFileChange={(file) => this.setState({ selected: file })}
+              />
+            )}
           </div>
         </div>
         {confirmDelete && (
-          <div className="delete-confirm-overlay">
-            <div className="delete-confirm-box">
-              <div className="delete-confirm-message">Are you sure you want to delete this file?</div>
-              <div className="delete-confirm-actions">
-                <button onClick={()=>this.setState({confirmDelete:null})}>Cancel</button>
-                <button onClick={this.confirmDeleteFile} className="delete-confirm-danger">Delete</button>
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white rounded-lg p-6 max-w-sm mx-auto">
+              <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
+              <p className="text-gray-700 mb-4">Are you sure you want to delete this file?</p>
+              <div className="flex justify-end space-x-2">
+                <button 
+                  onClick={() => this.setState({ confirmDelete: null })} 
+                  className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={this.confirmDeleteFile} 
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>

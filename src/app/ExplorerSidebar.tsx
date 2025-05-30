@@ -7,7 +7,7 @@ interface FolderTreeState {
   folderChildren: Record<string, any[]>;
 }
 
-// Convert FolderTree to class component with state annotation
+// Revert FolderTree to internal expanded state
 class FolderTree extends React.Component<any, FolderTreeState> {
   state: FolderTreeState = { expanded: {}, folderChildren: {} };
 
@@ -21,25 +21,32 @@ class FolderTree extends React.Component<any, FolderTreeState> {
     if (onCacheClearReady) onCacheClearReady(this.clearCache);
   }
 
-  componentDidUpdate(prevProps: any) {
+  componentDidUpdate(prevProps: any, prevState: FolderTreeState) {
     if (prevProps.showNSFW !== this.props.showNSFW) {
       this.clearCache();
     }
-  }
-
-  handleToggle = async (path: string) => {
-    this.setState(prev => ({ expanded: { ...prev.expanded, [path]: !prev.expanded[path] } }), async () => {
-      const { expanded, folderChildren } = this.state;
-      if (expanded[path] && !folderChildren[path]) {
-        try {
-          const res = await fetch(`/api/children?folder=${encodeURIComponent(path)}`);
-          const data = await res.json();
-          this.setState(prev => ({ folderChildren: { ...prev.folderChildren, [path]: data.children || [] } }));
-        } catch (e) {
-          console.error('Failed to load folder children:', e);
-        }
+    // Load children on expansion
+    Object.keys(this.state.expanded).forEach(path => {
+      if (this.state.expanded[path] && !prevState.expanded[path]) {
+        this.loadChildren(path);
       }
     });
+  }
+
+  // Toggle internal expanded state
+  handleToggle = (path: string) => {
+    this.setState(prev => ({ expanded: { ...prev.expanded, [path]: !prev.expanded[path] } }));
+  };
+
+  // Fetch and store children for a given folder path
+  loadChildren = async (path: string) => {
+    try {
+      const res = await fetch(`/api/children?folder=${encodeURIComponent(path)}`);
+      const data = await res.json();
+      this.setState(prev => ({ folderChildren: { ...prev.folderChildren, [path]: data.children || [] } }));
+    } catch (e) {
+      console.error('Failed to load folder children:', e);
+    }
   };
 
   getIndentClass(level: number) {
@@ -47,7 +54,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
   }
 
   renderNode = (node: any, level = 0): React.ReactNode => {
-    const { expanded, folderChildren } = this.state;
+    const { folderChildren, expanded } = this.state;
     const { onSelect, selected, showNSFW } = this.props;
     if (node.type === 'folder') {
       const isOpen = expanded[node.path];
@@ -105,11 +112,8 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
     this.setState({ tree: data.tree || [], loading: false });
   };
 
+  // Refresh tree without clearing folder cache (preserves expanded state)
   fullRefresh = () => {
-    const { clearFolderCache } = this.state;
-    if (clearFolderCache) {
-      clearFolderCache();
-    }
     this.refresh();
   };
 
