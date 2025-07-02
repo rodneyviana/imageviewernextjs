@@ -129,7 +129,7 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
   };
 
   render() {
-    const { onSelect, selected, showNSFW } = this.props;
+    const { onSelect, selected, showNSFW, onToggleNSFW } = this.props;
     const { tree, loading } = this.state;
 
     return (
@@ -137,6 +137,13 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
         <div className="explorer-sidebar-header">
           <span className="explorer-sidebar-title">Root</span>
           <button onClick={this.fullRefresh} title="Refresh">🔄</button>
+          <button
+            onClick={() => onToggleNSFW()}
+            title={showNSFW ? "Hide flagged images" : "Show flagged images"}
+            className="ml-2 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+          >
+            {showNSFW ? "Hide flagged" : "Show flagged"}
+          </button>
         </div>
         {loading ? (
           <div>Loading...</div>

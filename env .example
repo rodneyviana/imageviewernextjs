@@ -1,0 +1,3 @@
+FOLDERS="d:/generated;d:/images;d:/flux"
+# Optionally, you can add FOLDER_NAMES if you want custom names for each folder:
+FOLDER_NAMES="Generated;Images;Flux"

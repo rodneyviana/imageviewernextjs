@@ -237,11 +237,23 @@ export default class MainExplorer extends React.Component<{}, MainExplorerState>
     if (!confirmDelete) return;
     const currentPath = files[currentIdx]?.path;
     const deletingCurrent = currentPath === confirmDelete;
+    // Determine next selection: next file if exists, else previous, else none
+    let newSelected: string | null = null;
+    if (deletingCurrent) {
+      if (currentIdx < files.length - 1) {
+        newSelected = files[currentIdx + 1].path;
+      } else if (currentIdx > 0) {
+        newSelected = files[currentIdx - 1].path;
+      }
+    } else {
+      newSelected = currentPath || null;
+    }
     await fetch(`/api/delete?file=${encodeURIComponent(confirmDelete)}`, { method: 'DELETE' });
-    this.setState({ confirmDelete: null });
-    this.refreshChildren();
-    if (sidebarRefresh) sidebarRefresh();
-    if (!deletingCurrent && currentPath) this.setState({ selected: currentPath });
+    // Clear confirm and update selection, then refresh
+    this.setState({ confirmDelete: null, selected: newSelected }, () => {
+      this.refreshChildren();
+      if (sidebarRefresh) sidebarRefresh();
+    });
   };
 
   handleFlagNSFW = async (file: string, flag: boolean) => {
