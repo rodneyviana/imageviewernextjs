@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ metadata: null });
     }
   } catch (e) {
+    console.error('Failed to read metadata:', e);
     return NextResponse.json({ error: 'Failed to read metadata' }, { status: 500 });
   }
 }

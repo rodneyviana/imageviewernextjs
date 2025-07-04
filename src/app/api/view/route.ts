@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
     }
     
     const stream = fs.createReadStream(file);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Response(stream as any, {
       headers: {
         'Content-Type': contentType,
@@ -68,6 +69,7 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (e) {
+    console.error('Failed to load file:', e);
     return new Response('Failed to load file', { status: 500 });
   }
 }

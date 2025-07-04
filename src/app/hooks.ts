@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export function useFolders() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [tree, setTree] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +20,7 @@ export function useFolders() {
 }
 
 export function useChildren(folder: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFile, setIsFile] = useState(false);
@@ -41,6 +43,7 @@ export function useChildren(folder: string) {
 }
 
 export function useMetadata(file: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [metadata, setMetadata] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

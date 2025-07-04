@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
     fs.unlinkSync(file + '.nsfw');
     return NextResponse.json({ success: true });
   } catch (e) {
+    console.error('Failed to unflag NSFW:', e);
     return NextResponse.json({ error: 'Failed to unflag NSFW' }, { status: 500 });
   }
 }

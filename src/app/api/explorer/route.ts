@@ -12,6 +12,7 @@ const allowedExtensions = [
 function getFoldersAndFiles(baseFolders: string[], folderNames?: string[]) {
   const result = baseFolders.map((folder, idx) => {
     const name = folderNames && folderNames[idx] ? folderNames[idx] : path.basename(folder);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let children: any[] = [];
     try {
       const items = fs.readdirSync(folder, { withFileTypes: true });      children = items.map(item => {
@@ -33,6 +34,7 @@ function getFoldersAndFiles(baseFolders: string[], folderNames?: string[]) {
         return null;      }).filter(Boolean);
       
       // Sort children consistently: folders first (alphabetically), then files by mtime (most recent first)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       children.sort((a: any, b: any) => {
         if (a.type === 'folder' && b.type === 'file') return -1;
         if (a.type === 'file' && b.type === 'folder') return 1;
@@ -44,13 +46,14 @@ function getFoldersAndFiles(baseFolders: string[], folderNames?: string[]) {
         return a.name.localeCompare(b.name); // Folders alphabetically
       });
     } catch (e) {
-      // ignore errors for missing folders
+      console.error('Failed to read folder contents:', e);
     }
     return { type: 'folder', name, path: folder, children };
   });
   return result;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(req: NextRequest) {
   const folders = process.env.FOLDERS?.split(';') || [];
   const folderNames = process.env.FOLDER_NAMES?.split(';');

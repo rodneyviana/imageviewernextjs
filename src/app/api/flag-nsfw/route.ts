@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
     const fullPath = fs.realpathSync(file + '.nsfw');
     return NextResponse.json({ success: true, fullPath: fullPath }, { status: 200 });
   } catch (e) {
+    console.error('Failed to flag NSFW:', e);
     return NextResponse.json({ error: 'Failed to flag NSFW' }, { status: 500 });
   }
 }

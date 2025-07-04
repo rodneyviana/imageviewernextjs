@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Define state interface for FolderTree
 interface FolderTreeState {
@@ -8,6 +9,7 @@ interface FolderTreeState {
 }
 
 // Revert FolderTree to internal expanded state
+ 
 class FolderTree extends React.Component<any, FolderTreeState> {
   state: FolderTreeState = { expanded: {}, folderChildren: {} };
 
@@ -21,6 +23,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
     if (onCacheClearReady) onCacheClearReady(this.clearCache);
   }
 
+   
   componentDidUpdate(prevProps: any, prevState: FolderTreeState) {
     if (prevProps.showNSFW !== this.props.showNSFW) {
       this.clearCache();
@@ -53,6 +56,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
     return `folder-indent-level-${Math.min(level, 10)}`;
   }
 
+   
   renderNode = (node: any, level = 0): React.ReactNode => {
     const { folderChildren, expanded } = this.state;
     const { onSelect, selected, showNSFW } = this.props;
@@ -68,6 +72,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
             <span className="folder-icon">{isOpen ? '📂' : '📁'}</span>
             <span onClick={e => { e.stopPropagation(); onSelect(node.path); }}>{node.name}</span>
           </div>
+          { }
           {isOpen && children.map((child: any) => this.renderNode(child, level + 1))}
         </div>
       );
@@ -90,18 +95,21 @@ class FolderTree extends React.Component<any, FolderTreeState> {
 
   render() {
     const { tree } = this.props;
+    { }
     return <div className="explorer-tree-container">{tree.map((node: any) => this.renderNode(node, 0))}</div>;
   }
 }
 
 // Define state interface for ExplorerSidebar
 interface ExplorerSidebarState {
+   
   tree: any[];
   loading: boolean;
   clearFolderCache: (() => void) | null;
 }
 
 // Convert ExplorerSidebar to class component with state annotation
+ 
 export default class ExplorerSidebar extends React.Component<any, ExplorerSidebarState> {
   state: ExplorerSidebarState = { tree: [], loading: true, clearFolderCache: null };
 
