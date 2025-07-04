@@ -3,17 +3,23 @@
 import React from 'react';
 import ExplorerSidebar from './ExplorerSidebar';
 
+interface FileEntry {
+  path: string;
+  name: string;
+  type: 'file' | 'directory';
+  nsfwFlagged: boolean;
+}
+
 // Class-based ImageViewer
 interface ImageViewerProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  files: any[];
+  files: FileEntry[];
   currentIdx: number;
   setCurrentIdx: (idx: number) => void;
   showNSFW: boolean;
   onDelete: (file: string) => void;
   onFlagNSFW: (file: string, flag: boolean) => void;
   onFileChange: (file: string) => void;
-  onShowiPhoneFullscreen: (file: any) => void;
+  onShowiPhoneFullscreen: (file: FileEntry) => void;
   onToggleSlideshow: () => void;
   slideshowRunning: boolean;
 }
@@ -90,18 +96,12 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
     if (el) {
       if (el.requestFullscreen) {
         el.requestFullscreen();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } else if ((el as any).webkitEnterFullScreen) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (el as any).webkitEnterFullScreen();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } else if ((el as any).msRequestFullscreen) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (el as any).msRequestFullscreen();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } else if ((el as any).webkitRequestFullscreen) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (el as any).webkitRequestFullscreen();
+      } else if ((el as HTMLImageElement & { webkitEnterFullScreen?: () => void }).webkitEnterFullScreen) {
+        (el as HTMLImageElement & { webkitEnterFullScreen?: () => void }).webkitEnterFullScreen?.();
+      } else if ((el as HTMLImageElement & { msRequestFullscreen?: () => void }).msRequestFullscreen) {
+        (el as HTMLImageElement & { msRequestFullscreen?: () => void }).msRequestFullscreen?.();
+      } else if ((el as HTMLImageElement & { webkitRequestFullscreen?: () => void }).webkitRequestFullscreen) {
+        (el as HTMLImageElement & { webkitRequestFullscreen?: () => void }).webkitRequestFullscreen?.();
       }
     }
   };
@@ -187,24 +187,22 @@ interface MainExplorerState {
   selected: string|null;
   showNSFW: boolean;
   confirmDelete: string|null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  files: any[];
+  files: FileEntry[];
   currentIdx: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  children: any[];
+  children: FileEntry[];
   sidebarRefresh: (()=>void)|null;
   expanded: Record<string, boolean>;
   sidebarWidth: number; // px
   resizingSidebar: boolean;
   showiPhoneFullscreen: boolean;
-  iPhoneFullscreenFile: any | null;
+  iPhoneFullscreenFile: FileEntry | null;
   sidebarVisible: boolean;
   slideshowRunning: boolean;
   slideshowTimer: NodeJS.Timeout | null;
 }
 
-export default class MainExplorer extends React.Component<{}, MainExplorerState> {
-  private sidebarRef = React.createRef<any>();
+export default class MainExplorer extends React.Component<Record<string, never>, MainExplorerState> {
+  private sidebarRef = React.createRef<ExplorerSidebar>();
   state: MainExplorerState = {
     selected: null,
     showNSFW: false,
@@ -308,7 +306,7 @@ export default class MainExplorer extends React.Component<{}, MainExplorerState>
     this.setState(prevState => ({ sidebarVisible: !prevState.sidebarVisible }));
   };
 
-  handleShowiPhoneFullscreen = (file: any) => {
+  handleShowiPhoneFullscreen = (file: FileEntry) => {
     this.setState({ showiPhoneFullscreen: true, iPhoneFullscreenFile: file });
   };
 
@@ -320,8 +318,7 @@ export default class MainExplorer extends React.Component<{}, MainExplorerState>
     document.addEventListener('keydown', this.handleKeyDown);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  componentDidUpdate(prevProps: any, prevState: MainExplorerState) {
+  componentDidUpdate(prevProps: Record<string, never>, prevState: MainExplorerState) {
     if (prevState.selected !== this.state.selected || prevState.showNSFW !== this.state.showNSFW) {
       this.refreshChildren();
     }
@@ -374,11 +371,9 @@ export default class MainExplorer extends React.Component<{}, MainExplorerState>
       : selected || '';
     const res = await fetch(`/api/children?folder=${encodeURIComponent(folderToLoad)}`);
     const data = await res.json();
-    const children = data.children || [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let files = children.filter((c:any)=>c.type==='file');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!this.state.showNSFW) files = files.filter((f:any)=>!f.nsfwFlagged);
+    const children: FileEntry[] = data.children || [];
+    let files = children.filter((c:FileEntry)=>c.type==='file');
+    if (!this.state.showNSFW) files = files.filter((f:FileEntry)=>!f.nsfwFlagged);
     this.setState({ children, files }, this.updateCurrentIdx);
   };
 
@@ -478,7 +473,6 @@ export default class MainExplorer extends React.Component<{}, MainExplorerState>
                 onSidebarRefresh={this.handleSidebarRefresh}
                 showNSFW={showNSFW}
                 onToggleNSFW={() => this.setState({ showNSFW: !showNSFW })}
-                // @ts-ignore
                 style={{ width: '100%', height: '100%', flex: 1, padding: 0, margin: 0 }}
               />
             </div>
