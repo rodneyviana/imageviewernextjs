@@ -18,9 +18,33 @@ class FolderTree extends React.Component<any, FolderTreeState> {
     this.setState({ folderChildren: {} });
   };
 
+  // Targeted update for file NSFW flag
+  updateFileFlag = (filePath: string, nsfwFlagged: boolean) => {
+    this.setState(prev => {
+      const folderChildren = { ...prev.folderChildren };
+      let updated = false;
+      Object.keys(folderChildren).forEach(folder => {
+        const children = folderChildren[folder];
+        const idx = children.findIndex((c: any) => c.type === 'file' && c.path === filePath);
+        if (idx !== -1) {
+          folderChildren[folder] = [
+            ...children.slice(0, idx),
+            { ...children[idx], nsfwFlagged },
+            ...children.slice(idx + 1)
+          ];
+          updated = true;
+        }
+      });
+      if (updated) return { folderChildren };
+      // Force re-render even if not found, to update icons if needed
+      return { folderChildren: { ...folderChildren } };
+    });
+  };
+
   componentDidMount() {
-    const { onCacheClearReady } = this.props;
+    const { onCacheClearReady, onFileFlagReady } = this.props;
     if (onCacheClearReady) onCacheClearReady(this.clearCache);
+    if (onFileFlagReady) onFileFlagReady(this.updateFileFlag);
   }
 
    
@@ -109,8 +133,9 @@ interface ExplorerSidebarState {
 }
 
 // Convert ExplorerSidebar to class component with state annotation
- 
+
 export default class ExplorerSidebar extends React.Component<any, ExplorerSidebarState> {
+  folderTreeRef = React.createRef<any>();
   state: ExplorerSidebarState = { tree: [], loading: true, clearFolderCache: null };
 
   refresh = async () => {
@@ -136,6 +161,25 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
     this.setState({ clearFolderCache: fn });
   };
 
+  // Expose to parent: call FolderTree's updateFileFlag and update root tree state
+  updateFileFlag = (filePath: string, nsfwFlagged: boolean) => {
+    // Update FolderTree cache
+    if (this.folderTreeRef.current && this.folderTreeRef.current.updateFileFlag) {
+      this.folderTreeRef.current.updateFileFlag(filePath, nsfwFlagged);
+    }
+    // Update root tree state
+    const updateTree = (nodes: any[]): any[] =>
+      nodes.map(node => {
+        if (node.type === 'file' && node.path === filePath) {
+          return { ...node, nsfwFlagged };
+        } else if (node.type === 'folder' && node.children) {
+          return { ...node, children: updateTree(node.children) };
+        }
+        return node;
+      });
+    this.setState(prev => ({ tree: updateTree(prev.tree) }));
+  };
+
   render() {
     const { onSelect, selected, showNSFW, onToggleNSFW } = this.props;
     const { tree, loading } = this.state;
@@ -157,6 +201,7 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
           <div>Loading...</div>
         ) : (
           <FolderTree
+            ref={this.folderTreeRef}
             tree={tree}
             onSelect={onSelect}
             selected={selected}
