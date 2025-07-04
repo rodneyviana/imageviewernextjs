@@ -114,6 +114,10 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
     const { files, currentIdx, showNSFW, onDelete, onFlagNSFW } = this.props;
     const { metadata, loading } = this.state;
     const file = files[currentIdx];
+    if (file === undefined || file.name === undefined || !file.name.includes('.')) {
+      console.warn('Invalid file or no file selected', file);
+      return <div className="p-4 text-center text-gray-500">Invalid file or no file selected</div>;
+    }
     const ext = file.name.split('.').pop()?.toLowerCase();
     const isImage = ['jpeg','jpg','png','gif','bmp','webp'].includes(ext!);
     const isVideo = ['mp4','mpeg','wav','mov','avi','webm'].includes(ext!);
