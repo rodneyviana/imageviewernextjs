@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         name: path.basename(folder),
         path: folder,
         nsfwFlagged,
-        mtime: stat.mtime
+        birthtime: stat.birthtime
       };
       return NextResponse.json({ children: [fileInfo] });
     }
@@ -38,18 +38,18 @@ export async function GET(req: NextRequest) {
           name: item.name, 
           path: fullPath, 
           nsfwFlagged,
-          mtime: stats.mtime
+          birthtime: stats.birthtime
         };
       }
       return null;    }).filter(Boolean);
     
-    // Sort children consistently: folders first (alphabetically), then files by mtime (most recent first)
+    // Sort children consistently: folders first (alphabetically), then files by birthtime (most recent first)
     children.sort((a: any, b: any) => {
       if (a.type === 'folder' && b.type === 'file') return -1;
       if (a.type === 'file' && b.type === 'folder') return 1;
       if (a.type === 'file' && b.type === 'file') {
-        const dateA = a.mtime ? new Date(a.mtime).getTime() : 0;
-        const dateB = b.mtime ? new Date(b.mtime).getTime() : 0;
+        const dateA = a.birthtime ? new Date(a.birthtime).getTime() : 0;
+        const dateB = b.birthtime ? new Date(b.birthtime).getTime() : 0;
         return dateB - dateA; // Most recent first
       }
       return a.name.localeCompare(b.name); // Folders alphabetically
