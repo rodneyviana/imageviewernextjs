@@ -28,7 +28,13 @@ export async function GET(req: NextRequest) {
     const children = items.map(item => {
       const fullPath = path.join(folder, item.name);
       if (item.isDirectory()) {
-        return { type: 'folder', name: item.name, path: fullPath };
+        const stats = fs.statSync(fullPath);
+        return { 
+          type: 'folder', 
+          name: item.name, 
+          path: fullPath, 
+          birthtime: stats.birthtime 
+        };
       } else if (allowedExtensions.includes(path.extname(item.name).toLowerCase())) {
         // Check if a corresponding .nsfw file exists
         const nsfwFlagged = fs.existsSync(fullPath + '.nsfw');
@@ -43,16 +49,14 @@ export async function GET(req: NextRequest) {
       }
       return null;    }).filter(Boolean);
     
-    // Sort children consistently: folders first (alphabetically), then files by birthtime (most recent first)
+    // Sort children consistently: folders first (by birthtime, most recent first), then files by birthtime (most recent first)
     children.sort((a: any, b: any) => {
       if (a.type === 'folder' && b.type === 'file') return -1;
       if (a.type === 'file' && b.type === 'folder') return 1;
-      if (a.type === 'file' && b.type === 'file') {
-        const dateA = a.birthtime ? new Date(a.birthtime).getTime() : 0;
-        const dateB = b.birthtime ? new Date(b.birthtime).getTime() : 0;
-        return dateB - dateA; // Most recent first
-      }
-      return a.name.localeCompare(b.name); // Folders alphabetically
+      // Both folders or both files - sort by birthtime (most recent first)
+      const dateA = a.birthtime ? new Date(a.birthtime).getTime() : 0;
+      const dateB = b.birthtime ? new Date(b.birthtime).getTime() : 0;
+      return dateB - dateA; // Most recent first
     });
     
     return NextResponse.json({ children });

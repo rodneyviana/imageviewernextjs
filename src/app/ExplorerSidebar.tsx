@@ -41,10 +41,20 @@ class FolderTree extends React.Component<any, FolderTreeState> {
     });
   };
 
+  // Method to programmatically expand a folder path
+  expandFolder = (folderPath: string) => {
+    if (!this.state.expanded[folderPath]) {
+      this.setState(prev => ({ 
+        expanded: { ...prev.expanded, [folderPath]: true } 
+      }));
+    }
+  };
+
   componentDidMount() {
-    const { onCacheClearReady, onFileFlagReady } = this.props;
+    const { onCacheClearReady, onFileFlagReady, onExpandFolderReady } = this.props;
     if (onCacheClearReady) onCacheClearReady(this.clearCache);
     if (onFileFlagReady) onFileFlagReady(this.updateFileFlag);
+    if (onExpandFolderReady) onExpandFolderReady(this.expandFolder);
   }
 
    
@@ -109,6 +119,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
           className={this.getIndentClass(level + 2) + ' ' +
             (selected === node.path ? 'file-selected' : 'file')}
           onClick={() => onSelect(node.path)}
+          title={node.name}
         >
           {icon} {node.name}
         </div>
@@ -130,13 +141,14 @@ interface ExplorerSidebarState {
   tree: any[];
   loading: boolean;
   clearFolderCache: (() => void) | null;
+  expandFolder: ((folderPath: string) => void) | null;
 }
 
 // Convert ExplorerSidebar to class component with state annotation
 
 export default class ExplorerSidebar extends React.Component<any, ExplorerSidebarState> {
   folderTreeRef = React.createRef<any>();
-  state: ExplorerSidebarState = { tree: [], loading: true, clearFolderCache: null };
+  state: ExplorerSidebarState = { tree: [], loading: true, clearFolderCache: null, expandFolder: null };
 
   refresh = async () => {
     this.setState({ loading: true });
@@ -159,6 +171,17 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
 
   setCacheClear = (fn: () => void) => {
     this.setState({ clearFolderCache: fn });
+  };
+
+  setExpandFolder = (fn: (folderPath: string) => void) => {
+    this.setState({ expandFolder: fn });
+  };
+
+  // Method to programmatically expand a folder (to be called from parent)
+  expandFolderPath = (folderPath: string) => {
+    if (this.state.expandFolder) {
+      this.state.expandFolder(folderPath);
+    }
   };
 
   // Expose to parent: call FolderTree's updateFileFlag and update root tree state
@@ -207,6 +230,8 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
             selected={selected}
             showNSFW={showNSFW}
             onCacheClearReady={this.setCacheClear}
+            onFileFlagReady={this.updateFileFlag}
+            onExpandFolderReady={this.setExpandFolder}
           />
         )}
       </div>

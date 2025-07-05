@@ -70,16 +70,20 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
 
   handlePrevious = () => {
     const { currentIdx, files, setCurrentIdx, onFileChange } = this.props;
-    const newIdx = currentIdx - 1;
-    setCurrentIdx(newIdx);
-    if (files[newIdx]) onFileChange(files[newIdx].path);
+    if (currentIdx > 0) {
+      const newIdx = currentIdx - 1;
+      setCurrentIdx(newIdx);
+      if (files[newIdx]) onFileChange(files[newIdx].path);
+    }
   };
 
   handleNext = () => {
     const { currentIdx, files, setCurrentIdx, onFileChange } = this.props;
-    const newIdx = currentIdx + 1;
-    setCurrentIdx(newIdx);
-    if (files[newIdx]) onFileChange(files[newIdx].path);
+    if (currentIdx < files.length - 1) {
+      const newIdx = currentIdx + 1;
+      setCurrentIdx(newIdx);
+      if (files[newIdx]) onFileChange(files[newIdx].path);
+    }
   };
 
   // Ref for fullscreen
@@ -115,8 +119,7 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
     const { metadata, loading } = this.state;
     const file = files[currentIdx];
     if (file === undefined || file.name === undefined || !file.name.includes('.')) {
-      console.warn('Invalid file or no file selected', file);
-      return <div className="p-4 text-center text-gray-500">Invalid file or no file selected</div>;
+      return <div className="p-4 text-center text-gray-500">Select an image to see</div>;
     }
     const ext = file.name.split('.').pop()?.toLowerCase();
     const isImage = ['jpeg','jpg','png','gif','bmp','webp'].includes(ext!);
@@ -203,6 +206,8 @@ interface MainExplorerState {
   sidebarVisible: boolean;
   slideshowRunning: boolean;
   slideshowTimer: NodeJS.Timeout | null;
+  slideshowFiles: FileEntry[];
+  slideshowLoading: boolean;
 }
 
 export default class MainExplorer extends React.Component<Record<string, never>, MainExplorerState> {
@@ -223,6 +228,8 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     sidebarVisible: true,
     slideshowRunning: false,
     slideshowTimer: null,
+    slideshowFiles: [],
+    slideshowLoading: false,
   };
 
   sidebarMinWidth = 180;
@@ -282,20 +289,104 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     if (this.state.slideshowTimer) {
       clearInterval(this.state.slideshowTimer);
     }
-    this.setState({ slideshowRunning: false, slideshowTimer: null });
+    
+    // Show loading overlay briefly while stopping
+    this.setState({ slideshowLoading: true });
+    
+    this.setState({ 
+      slideshowRunning: false, 
+      slideshowTimer: null,
+      slideshowLoading: false
+    }, () => {
+      // Refresh the children for the current selection so the regular view shows the right files
+      this.refreshChildren();
+    });
   };
 
-  startSlideshow = () => {
+  startSlideshow = async () => {
     this.stopSlideshow(); // Stop any existing slideshow
-    const next = () => {
-      this.setState(prevState => {
-        const nextIdx = (prevState.currentIdx + 1) % prevState.files.length;
-        return { currentIdx: nextIdx };
+    
+    // Show loading overlay
+    this.setState({ slideshowLoading: true });
+    
+    try {
+      // Get the root folders from explorer
+      const res = await fetch('/api/explorer');
+      const data = await res.json();
+      const rootFolders = data.tree || [];
+
+      // Recursively collect all files from all folders
+      const collectAllFiles = async (folderPath: string): Promise<FileEntry[]> => {
+        try {
+          const res = await fetch(`/api/children?folder=${encodeURIComponent(folderPath)}`);
+          const data = await res.json();
+          const children = data.children || [];
+          
+          const files: FileEntry[] = [];
+          
+          for (const child of children) {
+            if (child.type === 'file') {
+              const fileEntry = {
+                path: child.path,
+                name: child.name,
+                type: 'file' as const,
+                nsfwFlagged: child.nsfwFlagged || false
+              };
+              files.push(fileEntry);
+            } else if (child.type === 'folder') {
+              const subFiles = await collectAllFiles(child.path);
+              files.push(...subFiles);
+            }
+          }
+          
+          return files;
+        } catch (e) {
+          console.error(`Failed to load folder ${folderPath}:`, e);
+          return [];
+        }
+      };
+
+      // Collect files from all root folders
+      let slideshowFiles: FileEntry[] = [];
+      for (const rootFolder of rootFolders) {
+        if (rootFolder.type === 'folder') {
+          const folderFiles = await collectAllFiles(rootFolder.path);
+          slideshowFiles.push(...folderFiles);
+        }
+      }
+
+      if (!this.state.showNSFW) {
+        slideshowFiles = slideshowFiles.filter((f:FileEntry)=>!f.nsfwFlagged);
+      }
+
+      // Find the current file in the slideshow list and start from there
+      const { selected } = this.state;
+      const currentFileIndex = selected ? slideshowFiles.findIndex(f => f.path === selected) : 0;
+      
+      this.setState({ 
+        slideshowFiles,
+        currentIdx: Math.max(0, currentFileIndex),
+        slideshowLoading: false
       });
+
+      const next = () => {
+        this.setState(prevState => {
+          if (prevState.slideshowFiles.length === 0) {
+            this.stopSlideshow();
+            return null;
+          }
+          const nextIdx = (prevState.currentIdx + 1) % prevState.slideshowFiles.length;
+          const nextFile = prevState.slideshowFiles[nextIdx];
+          return { currentIdx: nextIdx, selected: nextFile.path };
+        });
+      }
+      next(); // show next image immediately
+      const timer = setInterval(next, 3000);
+      this.setState({ slideshowRunning: true, slideshowTimer: timer });
+    } catch (error) {
+      console.error('Error starting slideshow:', error);
+      this.setState({ slideshowLoading: false });
     }
-    next(); // show next image immediately
-    const timer = setInterval(next, 3000);
-    this.setState({ slideshowRunning: true, slideshowTimer: timer });
   };
 
   toggleSlideshow = () => {
@@ -323,11 +414,27 @@ export default class MainExplorer extends React.Component<Record<string, never>,
   }
 
   componentDidUpdate(prevProps: Record<string, never>, prevState: MainExplorerState) {
-    if (prevState.selected !== this.state.selected || prevState.showNSFW !== this.state.showNSFW) {
+    // Only refresh children if we're not in slideshow mode or if showNSFW changed
+    if ((prevState.selected !== this.state.selected && !this.state.slideshowRunning) || prevState.showNSFW !== this.state.showNSFW) {
       this.refreshChildren();
     }
-    if (this.state.selected !== prevState.selected && !this.state.slideshowRunning) {
-      this.stopSlideshow();
+    
+    // Handle slideshow mode index synchronization and folder expansion
+    if (this.state.selected !== prevState.selected && this.state.slideshowRunning) {
+      const newIdx = this.state.slideshowFiles.findIndex(f => f.path === this.state.selected);
+      if (newIdx !== -1) {
+        this.setState({currentIdx: newIdx});
+        
+        // Expand parent folder for the new selected file
+        if (this.state.selected && !this.state.selected.endsWith('/') && !this.state.selected.endsWith('\\')) {
+          const parentFolder = this.state.selected.substring(0, Math.max(this.state.selected.lastIndexOf('/'), this.state.selected.lastIndexOf('\\')));
+          if (parentFolder && this.sidebarRef.current && this.sidebarRef.current.expandFolderPath) {
+            this.sidebarRef.current.expandFolderPath(parentFolder);
+          }
+        }
+      } else {
+        this.stopSlideshow();
+      }
     }
   }
 
@@ -341,18 +448,38 @@ export default class MainExplorer extends React.Component<Record<string, never>,
       this.toggleSlideshow();
       return;
     }
-    const { currentIdx, files } = this.state;
-    if (e.key === 'ArrowLeft' && currentIdx>0) {
-      this.stopSlideshow();
-      this.setState({ currentIdx: currentIdx-1 });
+
+    if (this.state.slideshowRunning) {
+      const { currentIdx, slideshowFiles } = this.state;
+      if (e.key === 'ArrowLeft') {
+        const newIdx = Math.max(0, currentIdx - 1);
+        this.setState({ currentIdx: newIdx, selected: slideshowFiles[newIdx].path });
+      }
+      if (e.key === 'ArrowRight') {
+        const newIdx = Math.min(slideshowFiles.length - 1, currentIdx + 1);
+        this.setState({ currentIdx: newIdx, selected: slideshowFiles[newIdx].path });
+      }
+      return;
     }
-    if (e.key === 'ArrowRight' && currentIdx<files.length-1) {
+
+    const { currentIdx, files } = this.state;
+    if (e.key === 'ArrowLeft') {
       this.stopSlideshow();
-      this.setState({ currentIdx: currentIdx+1 });
+      const newIdx = Math.max(0, currentIdx - 1);
+      this.setState({ currentIdx: newIdx, selected: files[newIdx]?.path });
+    }
+    if (e.key === 'ArrowRight') {
+      this.stopSlideshow();
+      const newIdx = Math.min(files.length - 1, currentIdx + 1);
+      this.setState({ currentIdx: newIdx, selected: files[newIdx]?.path });
     }
   };
 
   handleSelect = (path: string) => {
+    // Stop slideshow when user manually selects a different item
+    if (this.state.slideshowRunning) {
+      this.stopSlideshow();
+    }
     this.setState({ selected: path });
   };
 
@@ -378,11 +505,24 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     const children: FileEntry[] = data.children || [];
     let files = children.filter((c:FileEntry)=>c.type==='file');
     if (!this.state.showNSFW) files = files.filter((f:FileEntry)=>!f.nsfwFlagged);
-    this.setState({ children, files }, this.updateCurrentIdx);
+    this.setState({ children, files }, () => {
+      if (!this.state.slideshowRunning) {
+        this.updateCurrentIdx();
+      }
+    });
   };
 
   updateCurrentIdx = () => {
-    const { files, selected, currentIdx } = this.state;
+    const { files, selected, currentIdx, slideshowRunning, slideshowFiles } = this.state;
+    
+    // In slideshow mode, use slideshowFiles array
+    if (slideshowRunning) {
+      const idx = selected ? slideshowFiles.findIndex(f => f.path === selected) : 0;
+      this.setState({ currentIdx: Math.max(0, idx) });
+      return;
+    }
+    
+    // Regular mode logic
     let idx = 0;
     if (selected && !selected.endsWith('/') && !selected.endsWith('\\')) {
       const found = files.findIndex(f=>f.path===selected);
@@ -438,11 +578,26 @@ export default class MainExplorer extends React.Component<Record<string, never>,
   };
 
   render() {
-    const { files, currentIdx, showNSFW, confirmDelete, selected, showiPhoneFullscreen, iPhoneFullscreenFile, sidebarVisible, slideshowRunning } = this.state;
-    const file = files[currentIdx];
-    const isImage = file && ['jpeg','jpg','png','gif','bmp','webp'].includes(file.name.split('.').pop()?.toLowerCase()!);
-    const isVideo = file && ['mp4','mpeg','wav','mov','avi','webm'].includes(file.name.split('.').pop()?.toLowerCase()!);
-    const isHeic = file && file.name.split('.').pop()?.toLowerCase() === 'heic';
+    const { files, currentIdx, showNSFW, confirmDelete, selected, showiPhoneFullscreen, iPhoneFullscreenFile, sidebarVisible, slideshowRunning, children, slideshowFiles, slideshowLoading } = this.state;
+    // const isFolderSelected = selected && children.some(child => child.type === 'directory' && child.path === selected);
+    
+    // In slideshow mode, use slideshowFiles array, otherwise use regular files array
+    const activeFiles = slideshowRunning ? slideshowFiles : files;
+    const file = activeFiles[currentIdx];
+    
+    // folder is selected if select is a directory like /root/folder1/subfolder, basically if the selected does not contains a file extension
+    const lastPartOfSelected = selected ? selected.split('/').pop() || '' : '';
+    const isFolderSelected = !lastPartOfSelected.includes('.');
+    let isImage = false;
+    let isVideo = false;
+    let isHeic = false;
+    if (!isFolderSelected) {
+      isImage = file && ['jpeg','jpg','png','gif','bmp','webp'].includes(file.name.split('.').pop()?.toLowerCase()!);
+      isVideo = file && ['mp4','mpeg','wav','mov','avi','webm'].includes(file.name.split('.').pop()?.toLowerCase()!);
+      isHeic = file && file.name.split('.').pop()?.toLowerCase() === 'heic';
+    }
+    
+
 
     return (
       <React.Fragment>
@@ -496,12 +651,14 @@ export default class MainExplorer extends React.Component<Record<string, never>,
             <h1 className="text-lg font-semibold">Image Viewer</h1>
           </div>
           <div className="flex-1 overflow-auto">
-            {files.length === 0 ? (
+            {isFolderSelected ? (
+              <div className="p-4 text-center text-gray-500">Select an item to see the image</div>
+            ) : activeFiles.length === 0 ? (
               <div className="p-4 text-center text-gray-500">No files found</div>
             ) : (
               <ImageViewer
-                files={files}
-                currentIdx={currentIdx}
+                files={isFolderSelected ? [] : activeFiles}
+                currentIdx={isFolderSelected ? -1 : currentIdx}
                 setCurrentIdx={(idx) => {
                   this.stopSlideshow();
                   this.setState({ currentIdx: idx });
@@ -535,6 +692,65 @@ export default class MainExplorer extends React.Component<Record<string, never>,
                 >
                   Delete
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Slideshow Loading Overlay */}
+        {slideshowLoading && (
+          <div 
+            style={{ 
+              position: 'fixed', 
+              top: 0, 
+              left: 0, 
+              width: '100vw', 
+              height: '100vh', 
+              backgroundColor: 'rgba(0, 0, 0, 0.7)', 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              zIndex: 9998,
+              pointerEvents: 'none' 
+            }}
+          >
+            <div style={{ 
+              color: 'white', 
+              fontSize: '24px', 
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <span>Preparing</span>
+              <div style={{ 
+                display: 'inline-flex', 
+                gap: '4px' 
+              }}>
+                <div style={{ 
+                  width: '8px', 
+                  height: '8px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '50%',
+                  animation: 'dot-bounce 1.4s infinite ease-in-out both',
+                  animationDelay: '0s'
+                }}></div>
+                <div style={{ 
+                  width: '8px', 
+                  height: '8px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '50%',
+                  animation: 'dot-bounce 1.4s infinite ease-in-out both',
+                  animationDelay: '0.16s'
+                }}></div>
+                <div style={{ 
+                  width: '8px', 
+                  height: '8px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '50%',
+                  animation: 'dot-bounce 1.4s infinite ease-in-out both',
+                  animationDelay: '0.32s'
+                }}></div>
               </div>
             </div>
           </div>
