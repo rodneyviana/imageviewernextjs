@@ -157,7 +157,7 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
           </span>
           <button onClick={this.props.onToggleSlideshow} title="Slideshow">{this.props.slideshowRunning ? '❚❚' : '▶'}</button>
           <button onClick={() => window.open(`/api/download?file=${encodeURIComponent(file.path)}`)} title="Download">⬇️</button>
-          <button onClick={this.handleFullscreen} title="Full Screen" className="icon-button">⛶</button>
+          <button onClick={this.handleFullscreen} title="Full Screen" className="icon-button" style={{ backgroundColor: '#fff', color: '#222', border: '2px solid #222' }}>⛶</button>
           <button onClick={() => onFlagNSFW(file.path, !file.nsfwFlagged)} title={file.nsfwFlagged ? "Unflag NSFW" : "Flag NSFW"}>
             {file.nsfwFlagged ? '🔓' : '🔒'}
           </button>
@@ -208,6 +208,7 @@ interface MainExplorerState {
   slideshowTimer: NodeJS.Timeout | null;
   slideshowFiles: FileEntry[];
   slideshowLoading: boolean;
+  lastUpdate: number; // timestamp to force re-renders
 }
 
 export default class MainExplorer extends React.Component<Record<string, never>, MainExplorerState> {
@@ -230,6 +231,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     slideshowTimer: null,
     slideshowFiles: [],
     slideshowLoading: false,
+    lastUpdate: Date.now(),
   };
 
   sidebarMinWidth = 180;
@@ -418,14 +420,34 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     if ((prevState.selected !== this.state.selected && !this.state.slideshowRunning) || prevState.showNSFW !== this.state.showNSFW) {
       this.refreshChildren();
     }
-    
+
+    // Only expand parent folder when sidebar becomes visible (uncollapsed) - never collapse
+    if (this.state.sidebarVisible && !prevState.sidebarVisible && this.state.selected) {
+      // Always expand the parent folder when sidebar becomes visible
+      if (!this.state.selected.endsWith('/') && !this.state.selected.endsWith('\\')) {
+        const parentFolder = this.state.selected.substring(0, Math.max(this.state.selected.lastIndexOf('/'), this.state.selected.lastIndexOf('\\')));
+        if (parentFolder && this.sidebarRef.current && this.sidebarRef.current.expandFolderPath) {
+          // Use setTimeout to ensure the sidebar is fully rendered before expanding
+          setTimeout(() => {
+            if (this.sidebarRef.current && this.sidebarRef.current.expandFolderPath) {
+              this.sidebarRef.current.expandFolderPath(parentFolder);
+              // Scroll to selected file after expansion
+              setTimeout(() => {
+                const el = document.querySelector('.file-selected');
+                if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              }, 500);
+            }
+          }, 100);
+        }
+      }
+    }
+
     // Handle slideshow mode index synchronization and folder expansion
     if (this.state.selected !== prevState.selected && this.state.slideshowRunning) {
       const newIdx = this.state.slideshowFiles.findIndex(f => f.path === this.state.selected);
       if (newIdx !== -1) {
         this.setState({currentIdx: newIdx});
-        
-        // Expand parent folder for the new selected file
+        // Expand parent folder for the new selected file in slideshow
         if (this.state.selected && !this.state.selected.endsWith('/') && !this.state.selected.endsWith('\\')) {
           const parentFolder = this.state.selected.substring(0, Math.max(this.state.selected.lastIndexOf('/'), this.state.selected.lastIndexOf('\\')));
           if (parentFolder && this.sidebarRef.current && this.sidebarRef.current.expandFolderPath) {
@@ -495,6 +517,49 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     }
   };
 
+  // Check if NSFW file exists for a given file path
+  checkNSFWFlag = async (filePath: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/check-nsfw?file=${encodeURIComponent(filePath)}`);
+      const data = await response.json();
+      return data.nsfwFlagged || false;
+    } catch (e) {
+      console.error('Failed to check NSFW flag:', e);
+      return false;
+    }
+  };
+
+  handleFlagNSFW = async (file: string, flag: boolean) => {
+    const endpoint = flag ? 'flag-nsfw' : 'unflag-nsfw';
+    await fetch(`/api/${endpoint}`, { method: 'POST', body: JSON.stringify({ file }), headers: { 'Content-Type':'application/json' } });
+    
+    // Check actual file existence and update all relevant states
+    const actualFlag = await this.checkNSFWFlag(file);
+    
+    // Targeted update in sidebar
+    this.updateSidebarFileFlag(file, actualFlag);
+    
+    // Update both files and slideshowFiles arrays with actual flag status - properly clone objects
+    this.setState(prev => {
+      const updatedFiles = prev.files.map(f => 
+        f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
+      );
+      const updatedSlideshowFiles = prev.slideshowFiles.map(f => 
+        f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
+      );
+      const updatedChildren = prev.children.map(f => 
+        f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
+      );
+      return {
+        files: updatedFiles,
+        slideshowFiles: updatedSlideshowFiles,
+        children: updatedChildren,
+        selected: prev.selected,
+        lastUpdate: Date.now()
+      };
+    });
+  };
+
   refreshChildren = async () => {
     const { selected } = this.state;
     const folderToLoad = selected && !selected.endsWith('/') && !selected.endsWith('\\')
@@ -561,22 +626,6 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     });
   };
 
-  handleFlagNSFW = async (file: string, flag: boolean) => {
-    const endpoint = flag ? 'flag-nsfw' : 'unflag-nsfw';
-    await fetch(`/api/${endpoint}`, { method: 'POST', body: JSON.stringify({ file }), headers: { 'Content-Type':'application/json' } });
-    // Targeted update in sidebar
-    this.updateSidebarFileFlag(file, flag);
-    // Also update in local files state for viewer and refresh selected if needed
-    this.setState(prev => {
-      const updatedFiles = prev.files.map(f => f.path === file ? { ...f, nsfwFlagged: flag } : f);
-      const isSelected = prev.selected === file;
-      return {
-        files: updatedFiles,
-        selected: isSelected ? file : prev.selected
-      };
-    });
-  };
-
   render() {
     const { files, currentIdx, showNSFW, confirmDelete, selected, showiPhoneFullscreen, iPhoneFullscreenFile, sidebarVisible, slideshowRunning, children, slideshowFiles, slideshowLoading } = this.state;
     // const isFolderSelected = selected && children.some(child => child.type === 'directory' && child.path === selected);
@@ -601,49 +650,59 @@ export default class MainExplorer extends React.Component<Record<string, never>,
 
     return (
       <React.Fragment>
-        {showiPhoneFullscreen && selected && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'black', zIndex: 9999 }}>
-            <img
-              src={`/api/view?file=${encodeURIComponent(selected)}`}
-              alt={file?.name || 'Full screen image'}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-            <button
-              onClick={this.handleCloseiPhoneFullscreen}
-              style={{ position: 'absolute', top: '20px', right: '20px', color: 'white', background: 'none', border: 'none', fontSize: '30px', cursor: 'pointer' }}
-            >
-              &times;
-            </button>
-          </div>
-        )}
-      <div className="main-explorer flex flex-row w-full h-full overflow-hidden relative">
-        {sidebarVisible && <React.Fragment>
-          {/* Sidebar with resizable width, flexbox only, no z-index, no absolute, no overflow */}
-          <div
-            className="main-explorer-sidebar flex flex-col bg-white p-0 m-0"
-            style={{ flex: `0 0 ${this.state.sidebarWidth}px`, minWidth: this.sidebarMinWidth, maxWidth: this.sidebarMaxWidth }}
-          >
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <ExplorerSidebar
-                ref={this.sidebarRef}
-                selected={selected}
-                onSelect={this.handleSelect}
-                onRefresh={this.refreshChildren}
-                onSidebarRefresh={this.handleSidebarRefresh}
-                showNSFW={showNSFW}
-                onToggleNSFW={() => this.setState({ showNSFW: !showNSFW })}
-                style={{ width: '100%', height: '100%', flex: 1, padding: 0, margin: 0 }}
+        {showiPhoneFullscreen && (() => {
+          const currentFile = activeFiles[currentIdx];
+          if (!currentFile) return null;
+          return (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'black', zIndex: 9999 }}>
+              <img
+                src={`/api/view?file=${encodeURIComponent(currentFile.path)}`}
+                alt={currentFile?.name || 'Full screen image'}
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
+              <button
+                onClick={this.handleCloseiPhoneFullscreen}
+                style={{ position: 'absolute', top: '20px', right: '20px', color: 'white', background: 'none', border: 'none', fontSize: '30px', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
             </div>
+          );
+        })()}
+      <div className="main-explorer flex flex-row w-full h-full overflow-hidden relative">
+        {/* Sidebar - always mounted but conditionally visible */}
+        <div
+          className="main-explorer-sidebar flex flex-col bg-white p-0 m-0"
+          style={{ 
+            flex: sidebarVisible ? `0 0 ${this.state.sidebarWidth}px` : '0 0 0px', 
+            minWidth: sidebarVisible ? this.sidebarMinWidth : 0, 
+            maxWidth: sidebarVisible ? this.sidebarMaxWidth : 0,
+            overflow: 'hidden',
+            visibility: sidebarVisible ? 'visible' : 'hidden'
+          }}
+        >
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <ExplorerSidebar
+              ref={this.sidebarRef}
+              selected={selected}
+              onSelect={this.handleSelect}
+              onRefresh={this.refreshChildren}
+              onSidebarRefresh={this.handleSidebarRefresh}
+              showNSFW={showNSFW}
+              onToggleNSFW={() => this.setState({ showNSFW: !showNSFW })}
+              style={{ width: '100%', height: '100%', flex: 1, padding: 0, margin: 0 }}
+            />
           </div>
-          {/* Draggable divider, always visible and on top, not inside sidebar */}
+        </div>
+        {/* Draggable divider, only visible when sidebar is visible */}
+        {sidebarVisible && (
           <div
             className="sidebar-resize-handle"
             style={{ position: 'absolute', top: 0, left: this.state.sidebarWidth - 3, height: '100%', width: '6px', cursor: 'col-resize', zIndex: 100, userSelect: 'none', background: 'rgba(80,80,80,0.18)', borderRight: '2px solid #888' }}
             onMouseDown={this.handleSidebarMouseDown}
             onTouchStart={this.handleSidebarTouchStart}
           />
-        </React.Fragment>}
+        )}
         {/* Main content, flex-1, always fills remaining space */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <div className="flex-shrink-0 p-4 bg-gray-800 text-white image-viewer-header flex items-center">
@@ -657,6 +716,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
               <div className="p-4 text-center text-gray-500">No files found</div>
             ) : (
               <ImageViewer
+                key={`${file?.path || 'no-file'}-${file?.nsfwFlagged || 'false'}-${this.state.lastUpdate}`}
                 files={isFolderSelected ? [] : activeFiles}
                 currentIdx={isFolderSelected ? -1 : currentIdx}
                 setCurrentIdx={(idx) => {

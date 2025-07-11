@@ -112,7 +112,8 @@ class FolderTree extends React.Component<any, FolderTreeState> {
       );
     } else if (node.type === 'file') {
       if (!showNSFW && node.nsfwFlagged) return null;
-      const icon = node.nsfwFlagged ? '🔒' : '🖼️';
+      // Show unlock icon if flagged, photo if not flagged
+      const icon = node.nsfwFlagged ? '🔓' : '🖼️';
       return (
         <div
           key={node.path}
