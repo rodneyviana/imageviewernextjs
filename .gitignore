@@ -121,3 +121,8 @@ temp/
 # Image thumbnails and cache
 .thumbnails/
 .cache/
+ # miscelaneous
+ nohup.out
+
+ # nohup
+nohup.out

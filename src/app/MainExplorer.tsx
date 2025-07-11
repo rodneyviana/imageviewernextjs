@@ -601,11 +601,11 @@ export default class MainExplorer extends React.Component<Record<string, never>,
 
     return (
       <React.Fragment>
-        {showiPhoneFullscreen && iPhoneFullscreenFile && (
+        {showiPhoneFullscreen && selected && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'black', zIndex: 9999 }}>
             <img
-              src={`/api/view?file=${encodeURIComponent(iPhoneFullscreenFile.path)}`}
-              alt={iPhoneFullscreenFile.name}
+              src={`/api/view?file=${encodeURIComponent(selected)}`}
+              alt={file?.name || 'Full screen image'}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
             <button
