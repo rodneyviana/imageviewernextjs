@@ -23,7 +23,20 @@ A modern web-based image viewer built with Next.js that allows you to browse and
 - 🎭 **Loading Animations**: Smooth loading overlays with animated indicators
 - 💾 **Smart File Sorting**: Chronological ordering by creation date (newest first)
 
+## Recent Updates
+
+### Latest Release Features:
+- ✅ **Fixed Desktop & Mobile Fullscreen Slideshow**: Fullscreen mode now works correctly during slideshow on both desktop and mobile devices
+- ✅ **Improved NSFW Icon Display**: Resolved Unicode character issues with lock/unlock icons using proper escape sequences
+- ✅ **Enhanced Video File Support**: Added proper video file detection with 🎬 icons for MP4, MPEG, WAV, MOV, AVI, WebM
+- ✅ **Performance Optimizations**: Reduced excessive re-renders during slideshow operation
+- ✅ **Stable Component Mounting**: Implemented stable React key strategy to prevent component unmounting during slideshow
+- ✅ **Runtime Configuration**: Added production-friendly configuration that can be changed without rebuilding
+- ✅ **Cross-Platform Compatibility**: Ensured consistent functionality across different operating systems and browsers
+
 ## Configuration
+
+### Environment Variables (Build-time)
 
 Create a `.env` file in the root directory with your folder configuration:
 
@@ -34,6 +47,46 @@ FOLDER_NAMES="Custom Name 1;Custom Name 2"
 
 - `FOLDERS`: Semicolon-separated list of absolute paths to image directories
 - `FOLDER_NAMES`: (Optional) Semicolon-separated list of custom display names for folders
+
+### Runtime Configuration (Production-friendly)
+
+For production deployments where you need to change folder paths without rebuilding the application, you can use runtime configuration:
+
+#### Option 1: Data Directory Configuration
+
+Create a `data/runtime-config.json` file in your application directory:
+
+```json
+{
+  "folders": ["/production/generated", "/production/images", "/production/videos"],
+  "folderNames": ["Generated", "Images", "Videos"]
+}
+```
+
+#### Option 2: Custom Configuration Path
+
+Set the `CONFIG_PATH` environment variable to specify a custom configuration file location:
+
+```bash
+export CONFIG_PATH="/etc/imageviewer/config.json"
+```
+
+#### Configuration Priority
+
+The application checks for configuration in this order:
+1. `$CONFIG_PATH` (environment variable override)
+2. `data/runtime-config.json` (local data directory)
+3. `/etc/imageviewer/config.json` (system-wide configuration)
+4. `runtime-config.json` (application root fallback)
+5. Environment variables (final fallback)
+
+#### Production Deployment
+
+1. Build your application: `npm run build`
+2. Create or modify the runtime configuration file
+3. Restart the application - changes take effect immediately
+
+**Note**: Runtime configuration allows you to change folder paths in production without rebuilding the entire application.
 
 ## Keyboard Shortcuts
 

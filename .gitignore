@@ -126,3 +126,7 @@ temp/
 
  # nohup
 nohup.out
+
+# Runtime configuration (production-specific)
+/data/runtime-config.json
+runtime-config.json
