@@ -112,8 +112,21 @@ class FolderTree extends React.Component<any, FolderTreeState> {
       );
     } else if (node.type === 'file') {
       if (!showNSFW && node.nsfwFlagged) return null;
-      // Show unlock icon if flagged, photo if not flagged
-      const icon = node.nsfwFlagged ? '🔓' : '🖼️';
+      
+      // Determine file type and icon
+      let icon = '🖼️'; // default for images
+      const fileName = node.name.toLowerCase();
+      const ext = fileName.substring(fileName.lastIndexOf('.') + 1);
+      
+      if (['mp4','mpeg','wav','mov','avi','webm'].includes(ext)) {
+        icon = '🎬'; // video icon
+      }
+      
+      // Override with NSFW status if flagged (using Unicode escape sequence)
+      if (node.nsfwFlagged) {
+        icon = '\u{1F512}'; // locked icon for NSFW content
+      }
+      
       return (
         <div
           key={node.path}

@@ -114,6 +114,18 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
     this.setState({ loading: false });
   };
 
+  // Method to update current image without re-rendering during slideshow
+  updateCurrentImage = (newFile: FileEntry) => {
+    this.fetchMetadata(newFile.path);
+    this.props.onFileChange(newFile.path);
+    // Show overlay if HEIC
+    if (newFile.name.toLowerCase().endsWith('.heic')) {
+      this.setState({ loading: true });
+    } else {
+      this.setState({ loading: false });
+    }
+  };
+
   render() {
     const { files, currentIdx, showNSFW, onDelete, onFlagNSFW } = this.props;
     const { metadata, loading } = this.state;
@@ -159,7 +171,7 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
           <button onClick={() => window.open(`/api/download?file=${encodeURIComponent(file.path)}`)} title="Download">⬇️</button>
           <button onClick={this.handleFullscreen} title="Full Screen" className="icon-button" style={{ backgroundColor: '#fff', color: '#222', border: '2px solid #222' }}>⛶</button>
           <button onClick={() => onFlagNSFW(file.path, !file.nsfwFlagged)} title={file.nsfwFlagged ? "Unflag NSFW" : "Flag NSFW"}>
-            {file.nsfwFlagged ? '🔓' : '🔒'}
+            {file.nsfwFlagged ? '\u{1F513}' : '\u{1F512}'}
           </button>
           <button onClick={() => onDelete(file.path)} title="Delete">🗑️</button>
         </div>
@@ -213,6 +225,7 @@ interface MainExplorerState {
 
 export default class MainExplorer extends React.Component<Record<string, never>, MainExplorerState> {
   private sidebarRef = React.createRef<ExplorerSidebar>();
+  private imageViewerRef = React.createRef<ImageViewer>();
   state: MainExplorerState = {
     selected: null,
     showNSFW: false,
@@ -379,6 +392,12 @@ export default class MainExplorer extends React.Component<Record<string, never>,
           }
           const nextIdx = (prevState.currentIdx + 1) % prevState.slideshowFiles.length;
           const nextFile = prevState.slideshowFiles[nextIdx];
+          
+          // During slideshow, update ImageViewer directly to avoid re-mounting
+          if (prevState.slideshowRunning && this.imageViewerRef.current) {
+            this.imageViewerRef.current.updateCurrentImage(nextFile);
+          }
+          
           return { currentIdx: nextIdx, selected: nextFile.path };
         });
       }
@@ -716,7 +735,8 @@ export default class MainExplorer extends React.Component<Record<string, never>,
               <div className="p-4 text-center text-gray-500">No files found</div>
             ) : (
               <ImageViewer
-                key={`${file?.path || 'no-file'}-${file?.nsfwFlagged || 'false'}-${this.state.lastUpdate}`}
+                ref={this.imageViewerRef}
+                key={slideshowRunning ? 'slideshow-mode' : `${file?.path || 'no-file'}-${file?.nsfwFlagged || 'false'}`}
                 files={isFolderSelected ? [] : activeFiles}
                 currentIdx={isFolderSelected ? -1 : currentIdx}
                 setCurrentIdx={(idx) => {
