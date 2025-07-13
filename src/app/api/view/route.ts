@@ -7,15 +7,14 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const file = searchParams.get('file');
   if (!file) return new Response('No file specified', { status: 400 });
-  
+
   try {
     const stat = fs.statSync(file);
     if (!stat.isFile()) return new Response('Not a file', { status: 400 });
-    
-    // Get file extension to determine content type
+
     const ext = path.extname(file).toLowerCase();
     let contentType = 'application/octet-stream';
-    
+
     switch (ext) {
       case '.jpg':
       case '.jpeg':
@@ -45,10 +44,9 @@ export async function GET(req: NextRequest) {
       case '.webm':
         contentType = 'video/webm';
         break;
-      // HEIC will be handled separately via conversion
     }
-    
-    // If HEIC, convert to JPEG for browser viewing
+
+    // HEIC conversion
     if (ext === '.heic') {
       const inputBuffer = fs.readFileSync(file);
       const outputBuffer = await convert({ buffer: inputBuffer, format: 'JPEG', quality: 1 });
@@ -59,12 +57,52 @@ export async function GET(req: NextRequest) {
         }
       });
     }
-    
+
+    const range = req.headers.get('range');
+    const fileSize = stat.size;
+
+    // Handle Range Requests (for video)
+    if (range && contentType.startsWith('video/')) {
+      const bytesPrefix = 'bytes=';
+      if (!range.startsWith(bytesPrefix)) {
+        return new Response('Invalid range', { status: 416 });
+      }
+
+      const [startStr, endStr] = range.substring(bytesPrefix.length).split('-');
+      const start = parseInt(startStr, 10);
+      const end = endStr ? parseInt(endStr, 10) : fileSize - 1;
+
+      if (isNaN(start) || isNaN(end) || start > end || end >= fileSize) {
+        return new Response('Invalid range', {
+          status: 416,
+          headers: {
+            'Content-Range': `bytes */${fileSize}`
+          }
+        });
+      }
+
+      const chunkSize = end - start + 1;
+      const stream = fs.createReadStream(file, { start, end });
+
+      return new Response(stream as any, {
+        status: 206,
+        headers: {
+          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunkSize.toString(),
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        }
+      });
+    }
+
+    // Default (non-range, non-video or static download)
     const stream = fs.createReadStream(file);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Response(stream as any, {
       headers: {
         'Content-Type': contentType,
+        'Content-Length': fileSize.toString(),
+        'Accept-Ranges': 'bytes',
         'Cache-Control': 'public, max-age=31536000, immutable'
       }
     });
