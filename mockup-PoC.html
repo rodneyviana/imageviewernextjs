@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: white;
+            /* Ensure the iframe has a white background */
+        }
+    </style>
+</head>
+
+<body>
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Media Explorer</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+            :root {
+                --primary: #3498db;
+                --secondary: #2c3e50;
+                --background: #f5f7fa;
+                --surface: #ffffff;
+                --text: #2c3e50;
+                --textSecondary: #7f8c8d;
+                --border: #e0e6ed;
+                --hover: #ecf0f1;
+                --accent: #e74c3c;
+                --success: #2ecc71;
+                --warning: #f39c12;
+            }
+
+            .theme-dark {
+                --primary: #3498db;
+                --secondary: #1a2530;
+                --background: #121826;
+                --surface: #1f2937;
+                --text: #ecf0f1;
+                --textSecondary: #bdc3c7;
+                --border: #34495e;
+                --hover: #34495e;
+                --accent: #e74c3c;
+                --success: #2ecc71;
+                --warning: #f39c12;
+            }
+
+            .theme-ocean {
+                --primary: #00cec9;
+                --secondary: #0984e3;
+                --background: #636e72;
+                --surface: #b2bec3;
+                --text: #2d3436;
+                --textSecondary: #636e72;
+                --border: #2d3436;
+                --hover: #dfe6e9;
+                --accent: #e17055;
+                --success: #00b894;
+                --warning: #fdcb6e;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+            }
+
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: var(--background);
+                color: var(--text);
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .app-container {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+            }
+
+            .app-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 2rem;
+                background-color: var(--surface);
+                border-bottom: 1px solid var(--border);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            }
+
+            .app-header h1 {
+                color: var(--primary);
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .app-header h1 i {
+                color: var(--accent);
+            }
+
+            .controls {
+                display: flex;
+                gap: 1rem;
+                align-items: center;
+            }
+
+            .search-container {
+                position: relative;
+            }
+
+            .search-input {
+                padding: 0.5rem 1rem 0.5rem 2.5rem;
+                border-radius: 20px;
+                border: 1px solid var(--border);
+                background-color: var(--surface);
+                color: var(--text);
+                width: 250px;
+            }
+
+            .search-icon {
+                position: absolute;
+                left: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--textSecondary);
+            }
+
+            .theme-selector {
+                padding: 0.5rem 1rem;
+                border-radius: 20px;
+                border: 1px solid var(--border);
+                background-color: var(--surface);
+                color: var(--text);
+                cursor: pointer;
+            }
+
+            .explorer-container {
+                display: flex;
+                flex: 1;
+                overflow: hidden;
+            }
+
+            .sidebar {
+                width: 250px;
+                background-color: var(--surface);
+                border-right: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .sidebar-header {
+                padding: 1rem;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .sidebar-header h2 {
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: var(--textSecondary);
+            }
+
+            .sidebar-header i {
+                color: var(--primary);
+                cursor: pointer;
+            }
+
+            .folders-container {
+                overflow-y: auto;
+                flex: 1;
+                padding: 0.5rem 0;
+            }
+
+            .folder-item,
+            .file-item {
+                display: flex;
+                align-items: center;
+                padding: 0.75rem 1rem;
+                cursor: pointer;
+                user-select: none;
+                border-left: 3px solid transparent;
+            }
+
+            .folder-item:hover,
+            .file-item:hover {
+                background-color: var(--hover);
+            }
+
+            .folder-item.active,
+            .file-item.active {
+                background-color: rgba(52, 152, 219, 0.1);
+                border-left: 3px solid var(--primary);
+            }
+
+            .folder-icon,
+            .file-icon {
+                margin-right: 0.75rem;
+                font-size: 1.2rem;
+                min-width: 20px;
+            }
+
+            .folder-icon {
+                color: var(--warning);
+            }
+
+            .file-icon.image {
+                color: var(--success);
+            }
+
+            .file-icon.video {
+                color: var(--accent);
+            }
+
+            .item-name {
+                font-size: 0.95rem;
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .item-count {
+                background: var(--primary);
+                color: white;
+                border-radius: 10px;
+                padding: 2px 8px;
+                font-size: 0.8rem;
+            }
+
+            .subfolder-icon {
+                margin-left: 0.5rem;
+                font-size: 0.8rem;
+                color: var(--textSecondary);
+                transition: transform 0.2s;
+            }
+
+            .subfolder-icon.expanded {
+                transform: rotate(90deg);
+            }
+
+            .subfolders {
+                padding-left: 1.5rem;
+                display: none;
+            }
+
+            .subfolders.expanded {
+                display: block;
+            }
+
+            .subfolder-item {
+                padding: 0.5rem 1rem 0.5rem 1.5rem;
+                font-size: 0.9rem;
+                color: var(--textSecondary);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+            }
+
+            .subfolder-item:hover {
+                background-color: var(--hover);
+            }
+
+            .subfolder-item i {
+                margin-right: 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            .main-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .preview-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 1.5rem;
+                overflow: hidden;
+            }
+
+            .media-preview {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--surface);
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                position: relative;
+                overflow: hidden;
+                margin-bottom: 1.5rem;
+            }
+
+            .media-preview img,
+            .media-preview video {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+            }
+
+            .media-preview .placeholder {
+                color: var(--textSecondary);
+                font-size: 1.2rem;
+                text-align: center;
+                padding: 2rem;
+            }
+
+            .media-preview .placeholder i {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                color: var(--primary);
+            }
+
+            .toolbar {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                display: flex;
+                gap: 0.5rem;
+                background: rgba(0, 0, 0, 0.7);
+                padding: 0.5rem;
+                border-radius: 20px;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            .media-preview:hover .toolbar {
+                opacity: 1;
+            }
+
+            .toolbar-btn {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.2rem;
+                cursor: pointer;
+                padding: 0.5rem;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .toolbar-btn:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            .toolbar-btn i {
+                font-size: 1rem;
+            }
+
+            .metadata-container {
+                background: var(--surface);
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+            }
+
+            .metadata-header {
+                padding: 1rem;
+                background: var(--primary);
+                color: white;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: pointer;
+            }
+
+            .metadata-header h3 {
+                font-size: 1rem;
+                font-weight: 500;
+            }
+
+            .metadata-content {
+                padding: 1rem;
+                max-height: 200px;
+                overflow-y: auto;
+                font-family: monospace;
+                font-size: 0.9rem;
+                line-height: 1.5;
+                display: none;
+            }
+
+            .metadata-content.expanded {
+                display: block;
+            }
+
+            .no-selection {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                color: var(--textSecondary);
+                text-align: center;
+                padding: 2rem;
+            }
+
+            .no-selection i {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                color: var(--primary);
+            }
+
+            /* Scrollbar styling */
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: var(--background);
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 4px;
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--primary);
+            }
+
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .sidebar {
+                    width: 200px;
+                }
+
+                .controls {
+                    gap: 0.5rem;
+                }
+
+                .search-input {
+                    width: 180px;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="app-container">
+            <header class="app-header">
+                <h1><i class="fas fa-images"></i> Media Explorer</h1>
+                <div class="controls">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" placeholder="Search media..." class="search-input">
+                    </div>
+                    <select class="theme-selector" id="themeSelector">
+                        <option value="light">Light Theme</option>
+                        <option value="dark">Dark Theme</option>
+                        <option value="ocean">Ocean Theme</option>
+                    </select>
+                </div>
+            </header>
+
+            <div class="explorer-container">
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <h2>Folders & Files</h2>
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <div class="folders-container">
+                        <div class="folder-item active" id="rootFolder">
+                            <i class="fas fa-folder folder-icon"></i>
+                            <span class="item-name">My Media</span>
+                            <span class="item-count">12</span>
+                            <i class="fas fa-chevron-right subfolder-icon" id="rootToggle"></i>
+                        </div>
+                        <div class="subfolders expanded" id="rootSubfolders">
+                            <div class="folder-item" id="vacationFolder">
+                                <i class="fas fa-folder folder-icon"></i>
+                                <span class="item-name">Vacation 2023</span>
+                                <span class="item-count">5</span>
+                            </div>
+                            <div class="folder-item" id="projectsFolder">
+                                <i class="fas fa-folder folder-icon"></i>
+                                <span class="item-name">Projects</span>
+                                <span class="item-count">3</span>
+                                <i class="fas fa-chevron-right subfolder-icon" id="projectsToggle"></i>
+                            </div>
+                            <div class="subfolders" id="projectsSubfolders">
+                                <div class="folder-item">
+                                    <i class="fas fa-folder folder-icon"></i>
+                                    <span class="item-name">Web Design</span>
+                                </div>
+                                <div class="folder-item">
+                                    <i class="fas fa-folder folder-icon"></i>
+                                    <span class="item-name">Mobile App</span>
+                                </div>
+                            </div>
+                            <div class="file-item" data-type="image">
+                                <i class="fas fa-file-image file-icon image"></i>
+                                <span class="item-name">sunset-beach.jpg</span>
+                            </div>
+                            <div class="file-item" data-type="video">
+                                <i class="fas fa-file-video file-icon video"></i>
+                                <span class="item-name">mountain-hike.mp4</span>
+                            </div>
+                        </div>
+                        <div class="folder-item" id="personalFolder">
+                            <i class="fas fa-folder folder-icon"></i>
+                            <span class="item-name">Personal</span>
+                            <span class="item-count">7</span>
+                        </div>
+                        <div class="file-item" data-type="image">
+                            <i class="fas fa-file-image file-icon image"></i>
+                            <span class="item-name">family-portrait.png</span>
+                        </div>
+                        <div class="file-item" data-type="video">
+                            <i class="fas fa-file-video file-icon video"></i>
+                            <span class="item-name">birthday-party.mov</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-content">
+                    <div class="preview-container">
+                        <div class="media-preview" id="mediaPreview">
+                            <div class="placeholder">
+                                <i class="fas fa-image"></i>
+                                <p>Select an image or video to preview</p>
+                            </div>
+                            <div class="toolbar">
+                                <button class="toolbar-btn" title="Previous">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <button class="toolbar-btn" title="Next">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button class="toolbar-btn" title="Slide Show">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="toolbar-btn" title="Flag">
+                                    <i class="fas fa-lock"></i>
+                                </button>
+                                <button class="toolbar-btn" title="Unflag">
+                                    <i class="fas fa-unlock"></i>
+                                </button>
+                                <button class="toolbar-btn" title="Download">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="toolbar-btn" title="Full Screen">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <button class="toolbar-btn" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="metadata-container">
+                            <div class="metadata-header" id="metadataHeader">
+                                <h3>File Metadata</h3>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="metadata-content" id="metadataContent">
+                                <!-- Metadata will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Theme switching functionality
+            const themeSelector = document.getElementById('themeSelector');
+            const body = document.body;
+
+            themeSelector.addEventListener('change', function () {
+                body.className = '';
+                if (this.value === 'dark') {
+                    body.classList.add('theme-dark');
+                } else if (this.value === 'ocean') {
+                    body.classList.add('theme-ocean');
+                }
+            });
+
+            // Folder selection
+            const folderItems = document.querySelectorAll('.folder-item');
+            folderItems.forEach(item => {
+                item.addEventListener('click', function (e) {
+                    // Don't trigger if clicking on the toggle icon
+                    if (e.target.classList.contains('subfolder-icon')) return;
+
+                    folderItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // File selection
+            const fileItems = document.querySelectorAll('.file-item');
+            const mediaPreview = document.getElementById('mediaPreview');
+            const metadataContent = document.getElementById('metadataContent');
+            const metadataHeader = document.getElementById('metadataHeader');
+
+            fileItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    // Remove active class from all items
+                    document.querySelectorAll('.folder-item, .file-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const fileName = this.querySelector('.item-name').textContent;
+                    const fileType = this.dataset.type;
+
+                    // Update preview
+                    updatePreview(fileName, fileType);
+
+                    // Update metadata
+                    updateMetadata(fileName, fileType);
+                });
+            });
+
+            // Update media preview based on file type
+            function updatePreview(fileName, fileType) {
+                mediaPreview.innerHTML = '';
+
+                if (fileType === 'image') {
+                    const img = document.createElement('img');
+                    img.src = getImagePlaceholder();
+                    img.alt = fileName;
+                    mediaPreview.appendChild(img);
+                } else if (fileType === 'video') {
+                    const video = document.createElement('video');
+                    video.src = getVideoPlaceholder();
+                    video.controls = true;
+                    video.autoplay = true;
+                    video.loop = true;
+                    video.muted = true;
+                    mediaPreview.appendChild(video);
+                }
+
+                // Add toolbar
+                const toolbar = document.createElement('div');
+                toolbar.className = 'toolbar';
+                toolbar.innerHTML = `
+        <button class="toolbar-btn" title="Previous">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <button class="toolbar-btn" title="Next">
+          <i class="fas fa-arrow-right"></i>
+        </button>
+        <button class="toolbar-btn" title="Slide Show">
+          <i class="fas fa-play"></i>
+        </button>
+        <button class="toolbar-btn" title="Flag">
+          <i class="fas fa-lock"></i>
+        </button>
+        <button class="toolbar-btn" title="Unflag">
+          <i class="fas fa-unlock"></i>
+        </button>
+        <button class="toolbar-btn" title="Download">
+          <i class="fas fa-download"></i>
+        </button>
+        <button class="toolbar-btn" title="Full Screen">
+          <i class="fas fa-expand"></i>
+        </button>
+        <button class="toolbar-btn" title="Delete">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+                mediaPreview.appendChild(toolbar);
+            }
+
+            // Update metadata display
+            function updateMetadata(fileName, fileType) {
+                let metadata;
+
+                if (fileType === 'image') {
+                    metadata = {
+                        "fileName": fileName,
+                        "fileType": "JPEG Image",
+                        "fileSize": "2.4 MB",
+                        "dimensions": "1920x1080",
+                        "colorSpace": "RGB",
+                        "created": "2023-07-15 14:30:22",
+                        "modified": "2023-07-15 14:30:22",
+                        "camera": "Canon EOS R5",
+                        "aperture": "f/2.8",
+                        "exposure": "1/500 sec",
+                        "iso": "100",
+                        "focalLength": "50mm"
+                    };
+                } else {
+                    metadata = {
+                        "fileName": fileName,
+                        "fileType": "MP4 Video",
+                        "fileSize": "45.7 MB",
+                        "duration": "00:02:34",
+                        "dimensions": "1920x1080",
+                        "frameRate": "30 fps",
+                        "bitrate": "2500 kbps",
+                        "codec": "H.264",
+                        "audioCodec": "AAC",
+                        "created": "2023-08-22 09:15:47",
+                        "modified": "2023-08-22 09:15:47"
+                    };
+                }
+
+                metadataContent.textContent = JSON.stringify(metadata, null, 2);
+            }
+
+            // Get placeholder image
+            function getImagePlaceholder() {
+                // In a real app, this would be the actual image URL
+                return "https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80";
+            }
+
+            // Get placeholder video
+            function getVideoPlaceholder() {
+                // In a real app, this would be the actual video URL
+                return "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4";
+            }
+
+            // Subfolder toggle
+            const projectsFolder = document.getElementById('projectsFolder');
+            const projectsToggle = document.getElementById('projectsToggle');
+            const projectsSubfolders = document.getElementById('projectsSubfolders');
+
+            projectsFolder.addEventListener('click', function (e) {
+                if (e.target.classList.contains('subfolder-icon')) {
+                    e.stopPropagation();
+                    projectsToggle.classList.toggle('expanded');
+                    projectsSubfolders.classList.toggle('expanded');
+                }
+            });
+
+            // Root folder toggle
+            const rootFolder = document.getElementById('rootFolder');
+            const rootToggle = document.getElementById('rootToggle');
+            const rootSubfolders = document.getElementById('rootSubfolders');
+
+            rootFolder.addEventListener('click', function (e) {
+                if (e.target.classList.contains('subfolder-icon')) {
+                    e.stopPropagation();
+                    rootToggle.classList.toggle('expanded');
+                    rootSubfolders.classList.toggle('expanded');
+                }
+            });
+
+            // Metadata toggle
+            metadataHeader.addEventListener('click', function () {
+                const icon = this.querySelector('i');
+                metadataContent.classList.toggle('expanded');
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
+            });
+
+            // Initialize with first image selected
+            setTimeout(() => {
+                if (fileItems.length > 0) {
+                    fileItems[0].click();
+                }
+            }, 100);
+        </script>
+    </body>
+
+    </html>
+
+
+
+    <script>
+
+    </script>
+</body>
+
+</html>

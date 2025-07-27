@@ -1,6 +1,6 @@
-# Image Viewer with Metadata
+# Media Explorer
 
-A modern web-based image viewer built with Next.js that allows you to browse and view images with detailed metadata display. The application supports various image formats and displays EXIF data, file information, and other metadata in an easy-to-read format.
+A modern web-based media explorer and viewer built with Next.js that allows you to browse and view images with detailed metadata display. The application features a professional modern UI with theme support, responsive design, and advanced file management capabilities.
 
 ## Features
 
@@ -25,10 +25,17 @@ A modern web-based image viewer built with Next.js that allows you to browse and
 
 ## Recent Updates
 
-### Latest Release Features:
-- ✅ **Fixed Desktop & Mobile Fullscreen Slideshow**: Fullscreen mode now works correctly during slideshow on both desktop and mobile devices
-- ✅ **Improved NSFW Icon Display**: Resolved Unicode character issues with lock/unlock icons using proper escape sequences
-- ✅ **Enhanced Video File Support**: Added proper video file detection with 🎬 icons for MP4, MPEG, WAV, MOV, AVI, WebM
+### Version 1.1.0 - Modern UI Release:
+- ✅ **Complete Modern UI**: Professional redesigned interface with Font Awesome icons
+- ✅ **Theme System**: Light/dark mode toggle with localStorage persistence
+- ✅ **Responsive Layout**: Fixed sidebar widths (300px desktop, 200px mobile) with 600px min main content
+- ✅ **16:9 Image Display**: All images displayed in 16:9 aspect ratio
+- ✅ **Mobile Optimization**: Toolbar limited to 400px width, proper button sizing for mobile
+- ✅ **Horizontal Scrolling**: Sidebar and main content support horizontal scroll for long file names/content
+- ✅ **Centered Toolbar**: Image control icons centered over images
+- ✅ **Improved Selection**: Better contrast for selected files in both light and dark themes
+- ✅ **Fallback Support**: Maintains compatibility with classic interface
+- ✅ **Error Boundaries**: Graceful error handling with fallback to classic mode
 - ✅ **Performance Optimizations**: Reduced excessive re-renders during slideshow operation
 - ✅ **Stable Component Mounting**: Implemented stable React key strategy to prevent component unmounting during slideshow
 - ✅ **Runtime Configuration**: Added production-friendly configuration that can be changed without rebuilding

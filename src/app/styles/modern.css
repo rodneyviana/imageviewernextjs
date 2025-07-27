@@ -1,0 +1,1129 @@
+/* Modern Theme CSS Variables */
+:root {
+  /* Light Theme */
+  --primary: #3498db;
+  --secondary: #2c3e50;
+  --background: #f5f7fa;
+  --surface: #ffffff;
+  --text: #2c3e50;
+  --textSecondary: #7f8c8d;
+  --border: #e0e6ed;
+  --hover: #ecf0f1;
+  --accent: #e74c3c;
+  --success: #2ecc71;
+  --warning: #f39c12;
+  --shadow: rgba(0, 0, 0, 0.05);
+  --overlay: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] {
+  --primary: #3498db;
+  --secondary: #1a2530;
+  --background: #121826;
+  --surface: #1f2937;
+  --text: #ecf0f1;
+  --textSecondary: #bdc3c7;
+  --border: #34495e;
+  --hover: #34495e;
+  --accent: #e74c3c;
+  --success: #2ecc71;
+  --warning: #f39c12;
+  --shadow: rgba(0, 0, 0, 0.2);
+  --overlay: rgba(0, 0, 0, 0.8);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Modern App Container */
+.modern-app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--background);
+  color: var(--text);
+}
+
+/* Modern Header */
+.modern-app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 5px var(--shadow);
+  z-index: 100;
+}
+
+.modern-app-title {
+  color: var(--primary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.5rem;
+}
+
+.modern-app-title .icon {
+  color: var(--accent);
+  font-size: 1.5rem;
+}
+
+.modern-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.modern-search-container {
+  position: relative;
+}
+
+.modern-search-input {
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+  width: 250px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.modern-search-input:focus {
+  border-color: var(--primary);
+}
+
+.modern-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--textSecondary);
+  font-size: 1rem;
+}
+
+.modern-theme-selector {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.modern-theme-selector:focus {
+  border-color: var(--primary);
+}
+
+.modern-refresh-btn {
+  padding: 0.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.modern-refresh-btn:hover {
+  background-color: var(--primary);
+  color: white;
+  transform: rotate(180deg);
+}
+
+.modern-refresh-btn:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+/* Modern Explorer Container */
+.modern-explorer-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex: 1;
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  min-height: 0;
+  align-items: stretch; /* Ensure both sidebar and main content have same height */
+  gap: 0; /* No gap between sidebar and main content */
+  min-width: 0; /* Allow container to shrink and enable scrolling */
+}
+
+/* Resize removed - using fixed sidebar width */
+
+/* Modern Sidebar */
+.modern-sidebar,
+.sidebar {
+  flex: 0 0 300px !important; /* Fixed 300px width for desktop */
+  width: 300px !important; /* Fixed width */
+  min-width: 300px !important; /* Fixed minimum */
+  max-width: 300px !important; /* Fixed maximum */
+  background-color: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Force content to not expand sidebar */
+  position: relative;
+  z-index: 10; /* Ensure sidebar is above content */
+  box-sizing: border-box; /* Include border in width calculation */
+}
+
+/* Mobile sidebar - 200px width */
+@media (max-width: 768px) {
+  .modern-sidebar,
+  .sidebar {
+    flex: 0 0 200px !important;
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+  }
+}
+
+/* Fixed sidebar - no dynamic width */
+
+.modern-sidebar.collapsed {
+  width: 0;
+  overflow: hidden;
+}
+
+/* File tree container with scrolling */
+.file-tree {
+  flex: 1;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding: 0.5rem 0;
+  width: 100%; /* Force tree to use full sidebar width */
+}
+
+.file-tree::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.file-tree::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+.file-tree::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.file-tree::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+.tree-content {
+  min-width: max-content; /* Allow content to expand beyond container width */
+}
+
+.tree-item {
+  min-width: max-content; /* Allow tree items to expand beyond available width */
+}
+
+.tree-item-content {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  min-width: max-content; /* Allow content to expand beyond container width */
+  box-sizing: border-box;
+}
+
+.tree-item-content:hover {
+  background-color: var(--hover);
+}
+
+.tree-item-content.selected {
+  background-color: var(--primary);
+  color: white;
+}
+
+.file-name {
+  flex: 1;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  color: var(--text);
+  /* Removed overflow: hidden and text-overflow: ellipsis to allow horizontal scrolling */
+  min-width: max-content; /* Allow file names to expand beyond container */
+}
+
+.file-name.selected {
+  color: white;
+  font-weight: 500;
+}
+
+.tree-children {
+  width: 100%;
+}
+
+.loading-message,
+.empty-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  color: var(--textSecondary);
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.loading-message i {
+  font-size: 1.5rem;
+}
+
+.empty-message i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.modern-sidebar-header,
+.sidebar-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modern-sidebar-title,
+.sidebar-header h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--textSecondary);
+}
+
+.sidebar-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.control-button {
+  background: none;
+  border: none;
+  color: var(--textSecondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-button:hover {
+  color: var(--primary);
+  background-color: var(--hover);
+}
+
+.control-button.active {
+  color: var(--primary);
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.modern-sidebar-refresh {
+  color: var(--textSecondary);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.modern-sidebar-refresh:hover {
+  background-color: var(--hover);
+  color: var(--primary);
+}
+
+.modern-folders-container {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+/* Modern Folder and File Items */
+.modern-folder-item,
+.modern-file-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  border-left: 3px solid transparent;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.modern-folder-item:hover,
+.modern-file-item:hover {
+  background-color: var(--hover);
+}
+
+.modern-folder-item.active,
+.modern-file-item.active {
+  background-color: var(--primary);
+  border-left: 3px solid var(--primary);
+  color: white;
+}
+
+.modern-folder-icon,
+.modern-file-icon {
+  margin-right: 0.75rem;
+  font-size: 1.2rem;
+  min-width: 20px;
+}
+
+.modern-folder-icon {
+  color: var(--warning);
+}
+
+.modern-file-icon.image {
+  color: var(--success);
+}
+
+.modern-file-icon.video {
+  color: var(--accent);
+}
+
+.modern-file-icon.flagged {
+  color: #f1c40f;
+}
+
+.modern-item-name {
+  font-size: 0.95rem;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modern-item-count {
+  background: var(--primary);
+  color: white;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+}
+
+.modern-subfolder-icon {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--textSecondary);
+  transition: transform 0.2s ease;
+}
+
+.modern-subfolder-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.modern-subfolders {
+  padding-left: 1.5rem;
+  display: none;
+}
+
+.modern-subfolders.expanded {
+  display: block;
+}
+
+/* Modern Main Content */
+.modern-main-content {
+  flex: 1; /* Take remaining space */
+  min-width: 600px; /* Minimum width as requested */
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  overflow-y: hidden; /* Hide vertical scroll to focus on horizontal */
+  background-color: var(--background);
+  position: relative;
+  z-index: 1; /* Below sidebar */
+}
+
+/* Mobile main content adjustments */
+@media (max-width: 768px) {
+  .modern-main-content {
+    min-width: 600px; /* Keep 600px minimum even on mobile for horizontal scroll */
+  }
+}
+
+.modern-main-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.modern-main-content::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+.modern-main-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.modern-main-content::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Remove duplicate modern-explorer-container rules - they conflict with the main definition above */
+
+/* Responsive layout adjustments */
+@media (max-width: 768px) {
+  .modern-explorer-container {
+    display: flex !important;
+    flex-direction: row !important;
+  }
+  
+  .modern-sidebar,
+  .sidebar {
+    flex: 0 0 auto !important;
+  }
+  
+  .modern-main-content {
+    flex: 1 1 auto !important;
+    min-width: 100px !important;
+  }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  /* Mobile Portrait - Optimize for narrow screens */
+  .modern-sidebar,
+  .sidebar {
+    width: min(160px, 33vw) !important;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Mobile Landscape - Keep wider sidebar but still constrained */
+  .modern-sidebar,
+  .sidebar {
+    width: min(200px, 33vw) !important;
+  }
+}
+
+.modern-preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem; /* Reduced padding for mobile */
+  overflow: auto; /* Enable scrolling for the entire preview container */
+  min-width: 0; /* Allow shrinking to enable scrolling */
+  width: 100%; /* Use full width available */
+}
+
+.modern-preview-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.modern-preview-container::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 4px;
+}
+
+.modern-preview-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.modern-preview-container::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Responsive preview container */
+@media (min-width: 769px) {
+  .modern-preview-container {
+    padding: 1.5rem; /* Larger padding on desktop */
+  }
+  
+  .modern-media-preview {
+    min-height: 400px; /* Larger minimum height on desktop */
+  }
+}
+
+@media (max-width: 768px) {
+  .modern-preview-container {
+    padding: 0.5rem; /* Smaller padding on mobile */
+  }
+  
+  .modern-media-preview {
+    min-height: 200px; /* Smaller minimum height on mobile */
+    margin-bottom: 1rem; /* Reduced margin */
+  }
+}
+
+/* Modern Media Preview */
+.modern-media-preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px var(--shadow);
+  position: relative;
+  overflow: auto; /* Changed from hidden to auto for scrolling */
+  margin-bottom: 1.5rem;
+  min-height: 200px; /* Reduced minimum height for mobile */
+}
+
+.modern-media-preview::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.modern-media-preview::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+.modern-media-preview::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.modern-media-preview::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+.modern-media-preview img,
+.modern-media-preview video {
+  max-width: 100%;
+  width: 100%; /* Fill available width */
+  height: auto;
+  aspect-ratio: 16/9; /* Force 16:9 aspect ratio */
+  object-fit: contain; /* Maintain aspect ratio with letterboxing if needed */
+  border-radius: 8px;
+  display: block;
+  margin: auto; /* Center the image */
+}
+
+/* Mobile image adjustments */
+@media (max-width: 768px) {
+  .modern-media-preview img,
+  .modern-media-preview video {
+    max-width: 600px; /* Fixed 600px max width on mobile */
+    width: 600px; /* Set to 600px as requested */
+  }
+}
+
+.modern-media-preview .placeholder {
+  color: var(--textSecondary);
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.modern-media-preview .placeholder .icon {
+  font-size: 3rem;
+  color: var(--primary);
+}
+
+/* Modern Toolbar */
+.modern-toolbar {
+  position: absolute;
+  top: 1rem;
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Center the toolbar itself */
+  display: flex;
+  gap: 0.5rem;
+  background: var(--overlay);
+  padding: 0.5rem;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  max-width: 90%; /* Prevent overflow on small screens */
+  box-sizing: border-box;
+}
+
+/* Mobile toolbar adjustments */
+@media (max-width: 768px) {
+  .modern-toolbar {
+    max-width: 400px; /* Maximum 400px width on mobile */
+    gap: 0.25rem; /* Smaller gap between buttons */
+    padding: 0.4rem; /* Slightly smaller padding */
+    font-size: 0.9rem; /* Smaller icons */
+  }
+}
+
+.modern-media-preview:hover .modern-toolbar {
+  opacity: 1;
+}
+
+.modern-toolbar-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+/* Mobile toolbar button adjustments */
+@media (max-width: 768px) {
+  .modern-toolbar-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+    padding: 0.4rem;
+  }
+}
+
+.modern-toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modern-toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modern Metadata Container */
+.modern-metadata-container {
+  background: var(--surface);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px var(--shadow);
+  overflow: hidden;
+}
+
+.modern-metadata-header {
+  padding: 1rem;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modern-metadata-header:hover {
+  background: #2980b9;
+}
+
+.modern-metadata-header h3 {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.modern-metadata-content {
+  padding: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background-color: var(--background);
+  display: none;
+}
+
+.modern-metadata-content.expanded {
+  display: block;
+}
+
+/* Modern No Selection State */
+.modern-no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--textSecondary);
+  text-align: center;
+  padding: 2rem;
+}
+
+.modern-no-selection .icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--primary);
+}
+
+/* Modern Loading Overlay */
+.modern-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--overlay);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+.modern-loading-content {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.modern-loading-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.modern-loading-dot {
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  border-radius: 50%;
+  animation: modern-dot-bounce 1.4s infinite ease-in-out both;
+}
+
+.modern-loading-dot:nth-child(1) { animation-delay: 0s; }
+.modern-loading-dot:nth-child(2) { animation-delay: 0.16s; }
+.modern-loading-dot:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes modern-dot-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Modern Confirmation Dialog */
+.modern-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modern-confirm-dialog {
+  background: var(--surface);
+  color: var(--text);
+  padding: 2rem;
+  border-radius: 12px;
+  min-width: 300px;
+  max-width: 500px;
+  box-shadow: 0 10px 30px var(--shadow);
+}
+
+.modern-confirm-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+.modern-confirm-message {
+  margin-bottom: 1.5rem;
+  color: var(--textSecondary);
+  line-height: 1.5;
+}
+
+.modern-confirm-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.modern-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.modern-btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.modern-btn-primary:hover {
+  background: #2980b9;
+}
+
+.modern-btn-danger {
+  background: var(--accent);
+  color: white;
+}
+
+.modern-btn-danger:hover {
+  background: #c0392b;
+}
+
+.modern-btn-secondary {
+  background: var(--hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.modern-btn-secondary:hover {
+  background: var(--border);
+}
+
+/* Modern Sidebar Toggle */
+.modern-sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  margin-right: 1rem;
+}
+
+.modern-sidebar-toggle:hover {
+  background-color: var(--hover);
+}
+
+/* Modern Fullscreen */
+.modern-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: black;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-fullscreen img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.modern-fullscreen-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: white;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.modern-fullscreen-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Modern Converting Overlay */
+.modern-converting-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.modern-converting-overlay .modern-loading-dots {
+  margin-top: 1rem;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  /* Mobile devices - check orientation for specific optimizations */
+  .modern-sidebar,
+  .sidebar {
+    min-width: 160px; /* Ensure minimum width */
+  }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  /* Mobile Portrait - Remove width override to let JavaScript control it */
+  .modern-sidebar-title,
+  .sidebar-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .sidebar-header {
+    padding: 0.75rem;
+  }
+
+  .file-name {
+    font-size: 0.8rem;
+  }
+
+  .modern-folder-icon,
+  .modern-file-icon {
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    min-width: 14px;
+  }
+
+  .tree-item-content {
+    padding: 0.4rem 0;
+  }
+
+  .control-button {
+    padding: 0.4rem;
+    font-size: 0.9rem;
+  }
+
+  .modern-controls {
+    gap: 0.4rem;
+  }
+
+  .modern-search-input {
+    width: 160px;
+    font-size: 0.9rem;
+  }
+
+  .modern-app-header {
+    padding: 0.6rem 0.8rem;
+  }
+
+  .modern-app-title {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Mobile Landscape - Keep wider sidebar but still constrained - REMOVED conflicting width override */
+  .modern-controls {
+    gap: 0.5rem;
+  }
+
+  .modern-search-input {
+    width: 180px;
+  }
+
+  .modern-app-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .modern-preview-container {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-sidebar,
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .modern-sidebar.visible,
+  .sidebar.visible {
+    transform: translateX(0);
+  }
+
+  .modern-search-input {
+    width: 150px;
+  }
+
+  .modern-app-title {
+    font-size: 1.2rem;
+  }
+}
+
+/* Default sidebar behavior for larger screens */
+@media (min-width: 481px) {
+  .modern-sidebar:not(.visible),
+  .sidebar:not(.visible) {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    flex: 0 0 0 !important;
+  }
+
+  .modern-sidebar.visible,
+  .sidebar.visible {
+    display: flex !important;
+    flex: 0 0 auto !important;
+  }
+}
