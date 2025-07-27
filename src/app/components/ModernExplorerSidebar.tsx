@@ -6,7 +6,7 @@ interface FileEntry {
   path: string;
   name: string;
   type: 'file' | 'folder';
-  nsfwFlagged: boolean;
+  flagged: boolean;
 }
 
 export interface ModernExplorerSidebarRef {
@@ -19,14 +19,14 @@ interface ModernExplorerSidebarProps {
   onSelect: (path: string) => void;
   onRefresh: () => void;
   onSidebarRefresh: (fn: () => void) => void;
-  showNSFW: boolean;
-  onToggleNSFW: () => void;
+  showFlagged: boolean;
+  onToggleFlagged: () => void;
   visible: boolean;
   width: number; // Width controlled by parent
 }
 
 const ModernExplorerSidebar = forwardRef<ModernExplorerSidebarRef, ModernExplorerSidebarProps>(
-  ({ selected, onSelect, onRefresh, onSidebarRefresh, showNSFW, onToggleNSFW, visible, width }, ref) => {
+  ({ selected, onSelect, onRefresh, onSidebarRefresh, showFlagged, onToggleFlagged, visible, width }, ref) => {
   const [tree, setTree] = useState<FileEntry[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [folderContents, setFolderContents] = useState<Record<string, FileEntry[]>>({});
@@ -104,7 +104,7 @@ const ModernExplorerSidebar = forwardRef<ModernExplorerSidebarRef, ModernExplore
         const newContents = { ...prevContents };
         Object.keys(newContents).forEach(folderPath => {
           newContents[folderPath] = newContents[folderPath].map(item => 
-            item.path === file ? { ...item, nsfwFlagged: flag } : item
+            item.path === file ? { ...item, flagged: flag } : item
           );
         });
         return newContents;
@@ -114,7 +114,7 @@ const ModernExplorerSidebar = forwardRef<ModernExplorerSidebarRef, ModernExplore
     const updateTreeFlag = (items: FileEntry[], file: string, flag: boolean): FileEntry[] => {
       return items.map(item => {
         if (item.path === file) {
-          return { ...item, nsfwFlagged: flag };
+          return { ...item, flagged: flag };
         }
         return item;
       });
@@ -144,7 +144,7 @@ const ModernExplorerSidebar = forwardRef<ModernExplorerSidebarRef, ModernExplore
       }
       
       // If item is flagged and we're showing flagged content, show lock icon
-      if (item.nsfwFlagged && showNSFW) {
+      if (item.flagged && showFlagged) {
         return 'fas fa-lock modern-file-icon flagged';
       }
       
@@ -157,7 +157,7 @@ const ModernExplorerSidebar = forwardRef<ModernExplorerSidebarRef, ModernExplore
         default:
           return 'fas fa-file modern-file-icon';
       }
-    }, [expandedFolders, getFileType, showNSFW]);
+    }, [expandedFolders, getFileType, showFlagged]);
 
     const getFileIcon = useCallback((item: FileEntry) => {
       const iconClass = getFileIconClass(item);
@@ -177,10 +177,10 @@ const ModernExplorerSidebar = forwardRef<ModernExplorerSidebarRef, ModernExplore
 
     const filterItems = useCallback((items: FileEntry[]) => {
       return items.filter(item => {
-        if (!showNSFW && item.nsfwFlagged) return false;
+        if (!showFlagged && item.flagged) return false;
         return true;
       });
-    }, [showNSFW]);
+    }, [showFlagged]);
 
     const renderTreeItem = useCallback((item: FileEntry, level: number = 0) => {
       const isSelected = selected === item.path;
@@ -258,9 +258,9 @@ const ModernExplorerSidebar = forwardRef<ModernExplorerSidebarRef, ModernExplore
               <i className="fas fa-sync-alt" />
             </button>
             <button
-              onClick={onToggleNSFW}
-              className={`control-button ${showNSFW ? 'active' : ''}`}
-              title={showNSFW ? "Hide Flagged" : "Show Flagged"}
+              onClick={onToggleFlagged}
+              className={`control-button ${showFlagged ? 'active' : ''}`}
+              title={showFlagged ? "Hide Flagged" : "Show Flagged"}
             >
               <i className="fas fa-flag" />
             </button>

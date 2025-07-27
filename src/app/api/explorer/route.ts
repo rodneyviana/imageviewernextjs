@@ -32,14 +32,14 @@ function getFoldersAndFiles(baseFolders: string[], folderNames?: string[]) {
             birthtime: stats.birthtime 
           };
         } else if (allowedExtensions.includes(path.extname(item.name).toLowerCase())) {
-          // Check if a corresponding .nsfw file exists
-          const nsfwFlagged = fs.existsSync(fullPath + '.nsfw');
+          // Check if a corresponding .flagged file exists
+          const flagged = fs.existsSync(fullPath + '.flagged');
           const stats = fs.statSync(fullPath);
           return { 
             type: 'file', 
             name: item.name, 
             path: fullPath, 
-            nsfwFlagged,
+            flagged: flagged,
             mtime: stats.mtime,
             birthtime: stats.birthtime
           };

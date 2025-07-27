@@ -6,7 +6,7 @@ interface FileEntry {
   path: string;
   name: string;
   type: 'file' | 'folder';
-  nsfwFlagged: boolean;
+  flagged: boolean;
 }
 
 interface FileMetadata {
@@ -18,7 +18,7 @@ interface ModernImageViewerProps {
   currentIdx: number;
   setCurrentIdx: (idx: number) => void;
   onDelete: (file: string) => void;
-  onFlagNSFW: (file: string, flag: boolean) => void;
+  onFlag: (file: string, flag: boolean) => void;
   onFileChange: (file: string) => void;
   onShowiPhoneFullscreen: (file: FileEntry) => void;
   onToggleSlideshow: () => void;
@@ -30,7 +30,7 @@ export interface ModernImageViewerRef {
 }
 
 const ModernImageViewer = forwardRef<ModernImageViewerRef, ModernImageViewerProps>(
-  ({ files, currentIdx, setCurrentIdx, onDelete, onFlagNSFW, onFileChange, onShowiPhoneFullscreen, onToggleSlideshow, slideshowRunning }, ref) => {
+  ({ files, currentIdx, setCurrentIdx, onDelete, onFlag, onFileChange, onShowiPhoneFullscreen, onToggleSlideshow, slideshowRunning }, ref) => {
     const [metadata, setMetadata] = useState<FileMetadata | null>(null);
     const [loading, setLoading] = useState(false);
     const [metadataExpanded, setMetadataExpanded] = useState(false);
@@ -198,10 +198,10 @@ const ModernImageViewer = forwardRef<ModernImageViewerRef, ModernImageViewerProp
             </button>
             <button 
               className="modern-toolbar-btn" 
-              onClick={() => onFlagNSFW(file.path, !file.nsfwFlagged)}
-              title={file.nsfwFlagged ? "Unflag NSFW" : "Flag NSFW"}
+              onClick={() => onFlag(file.path, !file.flagged)}
+              title={file.flagged ? "Unflag" : "Flag"}
             >
-              <i className={`fas ${file.nsfwFlagged ? 'fa-unlock' : 'fa-lock'}`} />
+              <i className={`fas ${file.flagged ? 'fa-unlock' : 'fa-lock'}`} />
             </button>
             <button 
               className="modern-toolbar-btn" 

@@ -8,8 +8,8 @@ export async function DELETE(req: NextRequest) {
   if (!file) return NextResponse.json({ error: 'No file specified' }, { status: 400 });
   try {
     fs.unlinkSync(file);
-    // Also delete NSFW and metadata if present
-    try { fs.unlinkSync(file + '.nsfw'); } catch {}
+    // Also delete flagged and metadata if present
+    try { fs.unlinkSync(file + '.flagged'); } catch {}
     try { fs.unlinkSync(file + '.json'); } catch {}
     return NextResponse.json({ success: true });
   } catch (e) {

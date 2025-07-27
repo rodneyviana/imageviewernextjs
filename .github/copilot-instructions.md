@@ -4,6 +4,7 @@
 
 
 1. **Analyze Changes**
+   - Test if the project is compiling `npm run build`
    - Use `git diff` to identify what files changed since the last commit
    - If changes are not obvious from the diff, ask the user: "What changes were made in this update?"
    - Document all changes between commits in README.md (general) and CHANGELOG.md (detailed)

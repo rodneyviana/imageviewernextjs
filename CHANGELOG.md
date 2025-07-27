@@ -2,6 +2,37 @@
 
 All notable changes to the Media Explorer project will be documented in this file.
 
+## [1.2.0] - 2025-07-27
+
+### Changed
+- **Complete Terminology Refactor**: Changed all references from "NSFW" to "Flagged" throughout the application for more professional and inclusive language
+- **File Extension Migration**: Updated from `.nsfw` files to `.flagged` files for content flagging
+- **API Endpoint Renaming**: 
+  - `/api/check-nsfw` → `/api/check-flag`
+  - `/api/flag-nsfw` → `/api/flag`
+  - `/api/unflag-nsfw` → `/api/unflag`
+- **JSON Response Properties**: Changed API responses from `nsfwFlagged: boolean` to `flagged: boolean`
+- **UI Text Updates**: Updated button tooltips from "Flag NSFW"/"Unflag NSFW" to "Flag"/"Unflag"
+- **Property Names**: Updated TypeScript interfaces and component properties to use `flagged` instead of `nsfwFlagged`
+- **Code Comments**: Updated all code comments to use "flagged" terminology instead of "NSFW"
+
+### Fixed
+- **Filtering Logic**: Improved flagged content filtering to properly re-apply filters when flag status changes
+- **State Management**: Fixed issue where flagged files remained visible after being flagged when "Show Flagged" was disabled
+- **Slideshow Filtering**: Enhanced slideshow mode to properly filter out flagged content when "Show Flagged" is disabled
+- **Property Consistency**: Ensured all API responses, frontend code, and UI components use consistent property naming
+
+### Added
+- **Migration Scripts**: Created PowerShell and Bash scripts to automatically rename existing `.nsfw` files to `.flagged`
+- **Environment-based Migration**: Scripts read folder paths from `.env` file for automated batch processing
+- **Backward Compatibility**: Smooth transition from old NSFW system to new Flagged system
+
+### Technical
+- **API Consistency**: All API endpoints now return `flagged` property consistently
+- **TypeScript Updates**: Updated all interfaces and type definitions to use new property names
+- **Component Updates**: Updated all React components to use new property names and terminology
+- **Comment Cleanup**: Updated code comments and documentation to reflect new terminology
+
 ## [1.1.0] - 2025-01-27
 
 ### Added
@@ -56,5 +87,5 @@ All notable changes to the Media Explorer project will be documented in this fil
 - Initial release with classic interface
 - Basic image viewing and metadata display
 - Slideshow functionality
-- NSFW content management
+- Content flagging system (originally NSFW-based)
 - File management operations

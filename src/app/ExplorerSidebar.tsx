@@ -18,8 +18,8 @@ class FolderTree extends React.Component<any, FolderTreeState> {
     this.setState({ folderChildren: {} });
   };
 
-  // Targeted update for file NSFW flag
-  updateFileFlag = (filePath: string, nsfwFlagged: boolean) => {
+  // Targeted update for file flagged status
+  updateFileFlag = (filePath: string, flagged: boolean) => {
     this.setState(prev => {
       const folderChildren = { ...prev.folderChildren };
       let updated = false;
@@ -29,7 +29,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
         if (idx !== -1) {
           folderChildren[folder] = [
             ...children.slice(0, idx),
-            { ...children[idx], nsfwFlagged },
+            { ...children[idx], flagged },
             ...children.slice(idx + 1)
           ];
           updated = true;
@@ -111,7 +111,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
         </div>
       );
     } else if (node.type === 'file') {
-      if (!showNSFW && node.nsfwFlagged) return null;
+      if (!showNSFW && node.flagged) return null;
       
       // Determine file type and icon
       let icon = '🖼️'; // default for images
@@ -122,9 +122,9 @@ class FolderTree extends React.Component<any, FolderTreeState> {
         icon = '🎬'; // video icon
       }
       
-      // Override with NSFW status if flagged (using Unicode escape sequence)
-      if (node.nsfwFlagged) {
-        icon = '\u{1F512}'; // locked icon for NSFW content
+      // Override with flagged status if flagged (using Unicode escape sequence)
+      if (node.flagged) {
+        icon = '\u{1F512}'; // locked icon for flagged content
       }
       
       return (
@@ -199,16 +199,16 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
   };
 
   // Expose to parent: call FolderTree's updateFileFlag and update root tree state
-  updateFileFlag = (filePath: string, nsfwFlagged: boolean) => {
+  updateFileFlag = (filePath: string, flagged: boolean) => {
     // Update FolderTree cache
     if (this.folderTreeRef.current && this.folderTreeRef.current.updateFileFlag) {
-      this.folderTreeRef.current.updateFileFlag(filePath, nsfwFlagged);
+      this.folderTreeRef.current.updateFileFlag(filePath, flagged);
     }
     // Update root tree state
     const updateTree = (nodes: any[]): any[] =>
       nodes.map(node => {
         if (node.type === 'file' && node.path === filePath) {
-          return { ...node, nsfwFlagged };
+          return { ...node, flagged };
         } else if (node.type === 'folder' && node.children) {
           return { ...node, children: updateTree(node.children) };
         }

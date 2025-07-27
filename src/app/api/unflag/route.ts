@@ -5,10 +5,10 @@ export async function POST(req: NextRequest) {
   const { file } = await req.json();
   if (!file) return NextResponse.json({ error: 'No file specified' }, { status: 400 });
   try {
-    fs.unlinkSync(file + '.nsfw');
+    fs.unlinkSync(file + '.flagged');
     return NextResponse.json({ success: true });
   } catch (e) {
-    console.error('Failed to unflag NSFW:', e);
-    return NextResponse.json({ error: 'Failed to unflag NSFW' }, { status: 500 });
+    console.error('Failed to unflag:', e);
+    return NextResponse.json({ error: 'Failed to unflag' }, { status: 500 });
   }
 }

@@ -9,12 +9,12 @@ interface FileEntry {
   path: string;
   name: string;
   type: 'file' | 'folder';
-  nsfwFlagged: boolean;
+  flagged: boolean;
 }
 
 interface ModernMainExplorerState {
   selected: string | null;
-  showNSFW: boolean;
+  showFlagged: boolean;
   confirmDelete: string | null;
   files: FileEntry[];
   currentIdx: number;
@@ -37,7 +37,7 @@ export default function ModernMainExplorer() {
   
   const [state, setState] = useState<ModernMainExplorerState>({
     selected: null,
-    showNSFW: false,
+    showFlagged: false,
     confirmDelete: null,
     files: [],
     currentIdx: 0,
@@ -156,8 +156,8 @@ export default function ModernMainExplorer() {
       const children: FileEntry[] = data.children || [];
       let files = children.filter((c: FileEntry) => c.type === 'file');
       
-      if (!state.showNSFW) {
-        files = files.filter((f: FileEntry) => !f.nsfwFlagged);
+      if (!state.showFlagged) {
+        files = files.filter((f: FileEntry) => !f.flagged);
       }
       
       setState(prev => ({ ...prev, children, files }));
@@ -168,7 +168,7 @@ export default function ModernMainExplorer() {
     } catch (error) {
       console.error('Failed to refresh children:', error);
     }
-  }, [state.selected, state.showNSFW, state.slideshowRunning, state.files]);
+  }, [state.selected, state.showFlagged, state.slideshowRunning, state.files]);
 
   // Refresh children when selection or NSFW toggle changes
   useEffect(() => {
@@ -181,7 +181,7 @@ export default function ModernMainExplorer() {
       return () => clearTimeout(timeoutId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.selected, state.showNSFW, refreshChildren]);
+  }, [state.selected, state.showFlagged, refreshChildren]);
 
   const updateCurrentIdx = React.useCallback((files: FileEntry[], selected: string | null) => {
     let idx = 0;
@@ -231,7 +231,7 @@ export default function ModernMainExplorer() {
                 path: child.path,
                 name: child.name,
                 type: 'file' as const,
-                nsfwFlagged: child.nsfwFlagged || false
+                flagged: child.flagged || false
               });
             } else if (child.type === 'folder') {
               const subFiles = await collectAllFiles(child.path);
@@ -254,8 +254,8 @@ export default function ModernMainExplorer() {
         }
       }
 
-      if (!state.showNSFW) {
-        slideshowFiles = slideshowFiles.filter((f: FileEntry) => !f.nsfwFlagged);
+      if (!state.showFlagged) {
+        slideshowFiles = slideshowFiles.filter((f: FileEntry) => !f.flagged);
       }
 
       const currentFileIndex = state.selected ? slideshowFiles.findIndex(f => f.path === state.selected) : 0;
@@ -381,8 +381,8 @@ export default function ModernMainExplorer() {
     }
   };
 
-  const handleFlagNSFW = async (file: string, flag: boolean) => {
-    const endpoint = flag ? 'flag-nsfw' : 'unflag-nsfw';
+  const handleFlag = async (file: string, flag: boolean) => {
+    const endpoint = flag ? 'flag' : 'unflag';
     
     try {
       await fetch(`/api/${endpoint}`, { 
@@ -392,9 +392,9 @@ export default function ModernMainExplorer() {
       });
       
       // Check actual file existence and update states
-      const response = await fetch(`/api/check-nsfw?file=${encodeURIComponent(file)}`);
+      const response = await fetch(`/api/check-flag?file=${encodeURIComponent(file)}`);
       const data = await response.json();
-      const actualFlag = data.nsfwFlagged || false;
+      const actualFlag = data.flagged || false;
       
       // Update sidebar
       if (sidebarRef.current) {
@@ -404,13 +404,13 @@ export default function ModernMainExplorer() {
       // Update files arrays
       setState(prev => {
         const updatedFiles = prev.files.map(f => 
-          f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
+          f.path === file ? { ...f, flagged: actualFlag } : f
         );
         const updatedSlideshowFiles = prev.slideshowFiles.map(f => 
-          f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
+          f.path === file ? { ...f, flagged: actualFlag } : f
         );
         const updatedChildren = prev.children.map(f => 
-          f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
+          f.path === file ? { ...f, flagged: actualFlag } : f
         );
         
         return {
@@ -503,8 +503,8 @@ export default function ModernMainExplorer() {
             onSelect={handleSelect}
             onRefresh={refreshChildren}
             onSidebarRefresh={handleSidebarRefresh}
-            showNSFW={state.showNSFW}
-            onToggleNSFW={() => setState(prev => ({ ...prev, showNSFW: !prev.showNSFW }))}
+            showFlagged={state.showFlagged}
+            onToggleFlagged={() => setState(prev => ({ ...prev, showFlagged: !prev.showFlagged }))}
             visible={state.sidebarVisible}
             width={sidebarWidth}
           />
@@ -525,12 +525,12 @@ export default function ModernMainExplorer() {
             ) : (
               <ModernImageViewer
                 ref={imageViewerRef}
-                key={state.slideshowRunning ? 'slideshow-mode' : `${file?.path || 'no-file'}-${file?.nsfwFlagged || 'false'}`}
+                key={state.slideshowRunning ? 'slideshow-mode' : `${file?.path || 'no-file'}-${file?.flagged || 'false'}`}
                 files={activeFiles}
                 currentIdx={state.currentIdx}
                 setCurrentIdx={handleSetCurrentIdx}
                 onDelete={handleDelete}
-                onFlagNSFW={handleFlagNSFW}
+                onFlag={handleFlag}
                 onFileChange={handleFileChange}
                 onShowiPhoneFullscreen={handleShowiPhoneFullscreen}
                 onToggleSlideshow={toggleSlideshow}

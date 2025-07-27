@@ -7,7 +7,7 @@ interface FileEntry {
   path: string;
   name: string;
   type: 'file' | 'directory';
-  nsfwFlagged: boolean;
+  flagged: boolean;
 }
 
 // Class-based ImageViewer
@@ -170,8 +170,8 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
           <button onClick={this.props.onToggleSlideshow} title="Slideshow">{this.props.slideshowRunning ? '❚❚' : '▶'}</button>
           <button onClick={() => window.open(`/api/download?file=${encodeURIComponent(file.path)}`)} title="Download">⬇️</button>
           <button onClick={this.handleFullscreen} title="Full Screen" className="icon-button" style={{ backgroundColor: '#fff', color: '#222', border: '2px solid #222' }}>⛶</button>
-          <button onClick={() => onFlagNSFW(file.path, !file.nsfwFlagged)} title={file.nsfwFlagged ? "Unflag NSFW" : "Flag NSFW"}>
-            {file.nsfwFlagged ? '\u{1F513}' : '\u{1F512}'}
+          <button onClick={() => onFlagNSFW(file.path, !file.flagged)} title={file.flagged ? "Unflag" : "Flag"}>
+            {file.flagged ? '\u{1F513}' : '\u{1F512}'}
           </button>
           <button onClick={() => onDelete(file.path)} title="Delete">🗑️</button>
         </div>
@@ -345,7 +345,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
                 path: child.path,
                 name: child.name,
                 type: 'file' as const,
-                nsfwFlagged: child.nsfwFlagged || false
+                flagged: child.flagged || false
               };
               files.push(fileEntry);
             } else if (child.type === 'folder') {
@@ -371,7 +371,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
       }
 
       if (!this.state.showNSFW) {
-        slideshowFiles = slideshowFiles.filter((f:FileEntry)=>!f.nsfwFlagged);
+        slideshowFiles = slideshowFiles.filter((f:FileEntry)=>!f.flagged);
       }
 
       // Find the current file in the slideshow list and start from there
@@ -530,45 +530,50 @@ export default class MainExplorer extends React.Component<Record<string, never>,
 
 
   // Call updateFileFlag on ExplorerSidebar via ref
-  updateSidebarFileFlag = (filePath: string, nsfwFlagged: boolean) => {
+  updateSidebarFileFlag = (filePath: string, flagged: boolean) => {
     if (this.sidebarRef.current && this.sidebarRef.current.updateFileFlag) {
-      this.sidebarRef.current.updateFileFlag(filePath, nsfwFlagged);
+      this.sidebarRef.current.updateFileFlag(filePath, flagged);
     }
   };
 
-  // Check if NSFW file exists for a given file path
-  checkNSFWFlag = async (filePath: string): Promise<boolean> => {
+  // Check if Flagged file exists for a given file path
+  checkFlaggedFlag = async (filePath: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/check-nsfw?file=${encodeURIComponent(filePath)}`);
+      const response = await fetch(`/api/check-flag?file=${encodeURIComponent(filePath)}`);
       const data = await response.json();
-      return data.nsfwFlagged || false;
+      return data.flagged || false;
     } catch (e) {
-      console.error('Failed to check NSFW flag:', e);
+      console.error('Failed to check Flagged flag:', e);
       return false;
     }
   };
 
   handleFlagNSFW = async (file: string, flag: boolean) => {
-    const endpoint = flag ? 'flag-nsfw' : 'unflag-nsfw';
+    const endpoint = flag ? 'flag' : 'unflag';
     await fetch(`/api/${endpoint}`, { method: 'POST', body: JSON.stringify({ file }), headers: { 'Content-Type':'application/json' } });
     
     // Check actual file existence and update all relevant states
-    const actualFlag = await this.checkNSFWFlag(file);
+    const actualFlag = await this.checkFlaggedFlag(file);
     
     // Targeted update in sidebar
     this.updateSidebarFileFlag(file, actualFlag);
     
     // Update both files and slideshowFiles arrays with actual flag status - properly clone objects
     this.setState(prev => {
-      const updatedFiles = prev.files.map(f => 
-        f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
-      );
-      const updatedSlideshowFiles = prev.slideshowFiles.map(f => 
-        f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
-      );
       const updatedChildren = prev.children.map(f => 
-        f.path === file ? { ...f, nsfwFlagged: actualFlag } : f
+        f.path === file ? { ...f, flagged: actualFlag } : f
       );
+      
+      // Re-apply filtering logic for files array based on current showNSFW state
+      let updatedFiles = updatedChildren.filter((c:FileEntry)=>c.type==='file');
+      if (!prev.showNSFW) updatedFiles = updatedFiles.filter((f:FileEntry)=>!f.flagged);
+      
+      // Re-apply filtering logic for slideshow files array based on current showNSFW state
+      let updatedSlideshowFiles = prev.slideshowFiles.map(f => 
+        f.path === file ? { ...f, flagged: actualFlag } : f
+      );
+      if (!prev.showNSFW) updatedSlideshowFiles = updatedSlideshowFiles.filter((f:FileEntry)=>!f.flagged);
+      
       return {
         files: updatedFiles,
         slideshowFiles: updatedSlideshowFiles,
@@ -588,7 +593,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     const data = await res.json();
     const children: FileEntry[] = data.children || [];
     let files = children.filter((c:FileEntry)=>c.type==='file');
-    if (!this.state.showNSFW) files = files.filter((f:FileEntry)=>!f.nsfwFlagged);
+    if (!this.state.showNSFW) files = files.filter((f:FileEntry)=>!f.flagged);
     this.setState({ children, files }, () => {
       if (!this.state.slideshowRunning) {
         this.updateCurrentIdx();
@@ -736,7 +741,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
             ) : (
               <ImageViewer
                 ref={this.imageViewerRef}
-                key={slideshowRunning ? 'slideshow-mode' : `${file?.path || 'no-file'}-${file?.nsfwFlagged || 'false'}`}
+                key={slideshowRunning ? 'slideshow-mode' : `${file?.path || 'no-file'}-${file?.flagged || 'false'}`}
                 files={isFolderSelected ? [] : activeFiles}
                 currentIdx={isFolderSelected ? -1 : currentIdx}
                 setCurrentIdx={(idx) => {

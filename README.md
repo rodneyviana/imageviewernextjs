@@ -12,7 +12,7 @@ A modern web-based media explorer and viewer built with Next.js that allows you 
 - 🔍 **Full-Screen Viewing**: Immersive full-page image viewing experience
 - � **Mobile Optimized**: Responsive design with touch support and mobile fullscreen
 - 🎯 **Smart Navigation**: Keyboard shortcuts (arrow keys, 's' for slideshow)
-- 🔒 **NSFW Content Management**: Flag/unflag inappropriate content with visibility controls
+- 🔒 **Content Flagging System**: Flag/unflag inappropriate content with visibility controls
 - 🗑️ **File Management**: Delete files with confirmation dialogs
 - ⬇️ **Download Support**: Direct file download functionality
 - 🎨 **Modern UI**: Dark theme with smooth animations and hover effects
@@ -24,6 +24,15 @@ A modern web-based media explorer and viewer built with Next.js that allows you 
 - 💾 **Smart File Sorting**: Chronological ordering by creation date (newest first)
 
 ## Recent Updates
+
+### Version 1.2.0 - Terminology Refactor:
+- ✅ **Complete NSFW to Flagged Refactor**: Changed all references from "NSFW" to "Flagged" throughout the application
+- ✅ **File Extension Update**: Changed from `.nsfw` files to `.flagged` files for better terminology
+- ✅ **API Endpoint Renaming**: Updated API routes from `/api/*-nsfw` to `/api/*-flag` 
+- ✅ **UI Text Updates**: Changed button tooltips and labels from "Flag NSFW" to "Flag"
+- ✅ **Property Name Consistency**: Updated JSON responses to use `flagged` instead of `nsfwFlagged`
+- ✅ **Improved Filtering Logic**: Fixed filtering to properly hide/show flagged files when toggled
+- ✅ **Backward Compatibility**: Created PowerShell and Bash scripts to rename existing `.nsfw` files to `.flagged`
 
 ### Version 1.1.0 - Modern UI Release:
 - ✅ **Complete Modern UI**: Professional redesigned interface with Font Awesome icons
@@ -107,7 +116,7 @@ The application checks for configuration in this order:
 2. **Browse**: Use the sidebar to navigate through your folder structure
 3. **View**: Click on any image to view it with metadata
 4. **Slideshow**: Press 'S' or click the play button to start an automatic slideshow
-5. **Manage**: Flag NSFW content, delete files, or download images as needed
+5. **Manage**: Flag inappropriate content, delete files, or download images as needed
 
 ## Slideshow Features
 
@@ -115,7 +124,7 @@ The application checks for configuration in this order:
 - **Smart Ordering**: Respects folder hierarchy and chronological file ordering
 - **Dynamic Loading**: Prepares slideshow data on-demand with loading animations
 - **Folder Expansion**: Automatically expands relevant folders during slideshow navigation
-- **NSFW Filtering**: Respects NSFW visibility settings during slideshow
+- **Flagged Content Filtering**: Respects flagged content visibility settings during slideshow
 
 This is a [Next.js](https://nextjs.org) project.
 

@@ -13,13 +13,13 @@ export async function GET(req: NextRequest) {
   try {
     const stat = fs.statSync(folder);
     if (!stat.isDirectory()) {
-      // If it's a file, return file info with NSFW status
-      const nsfwFlagged = fs.existsSync(folder + '.nsfw');
+      // If it's a file, return file info with flagged status
+      const flagged = fs.existsSync(folder + '.flagged');
       const fileInfo = {
         type: 'file',
         name: path.basename(folder),
         path: folder,
-        nsfwFlagged,
+        flagged: flagged,
         birthtime: stat.birthtime
       };
       return NextResponse.json({ children: [fileInfo] });
@@ -36,14 +36,14 @@ export async function GET(req: NextRequest) {
           birthtime: stats.birthtime 
         };
       } else if (allowedExtensions.includes(path.extname(item.name).toLowerCase())) {
-        // Check if a corresponding .nsfw file exists
-        const nsfwFlagged = fs.existsSync(fullPath + '.nsfw');
+        // Check if a corresponding .flagged file exists
+        const flagged = fs.existsSync(fullPath + '.flagged');
         const stats = fs.statSync(fullPath);
         return { 
           type: 'file', 
           name: item.name, 
           path: fullPath, 
-          nsfwFlagged,
+          flagged: flagged,
           birthtime: stats.birthtime
         };
       }
