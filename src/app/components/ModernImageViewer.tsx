@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 
 interface FileEntry {
   path: string;
@@ -9,11 +9,14 @@ interface FileEntry {
   nsfwFlagged: boolean;
 }
 
+interface FileMetadata {
+  [key: string]: string | number | boolean | null;
+}
+
 interface ModernImageViewerProps {
   files: FileEntry[];
   currentIdx: number;
   setCurrentIdx: (idx: number) => void;
-  showNSFW: boolean;
   onDelete: (file: string) => void;
   onFlagNSFW: (file: string, flag: boolean) => void;
   onFileChange: (file: string) => void;
@@ -22,18 +25,13 @@ interface ModernImageViewerProps {
   slideshowRunning: boolean;
 }
 
-interface ModernImageViewerState {
-  metadata: any;
-  loading: boolean;
-}
-
 export interface ModernImageViewerRef {
   updateCurrentImage: (newFile: FileEntry) => void;
 }
 
 const ModernImageViewer = forwardRef<ModernImageViewerRef, ModernImageViewerProps>(
-  ({ files, currentIdx, setCurrentIdx, showNSFW, onDelete, onFlagNSFW, onFileChange, onShowiPhoneFullscreen, onToggleSlideshow, slideshowRunning }, ref) => {
-    const [metadata, setMetadata] = useState<any>(null);
+  ({ files, currentIdx, setCurrentIdx, onDelete, onFlagNSFW, onFileChange, onShowiPhoneFullscreen, onToggleSlideshow, slideshowRunning }, ref) => {
+    const [metadata, setMetadata] = useState<FileMetadata | null>(null);
     const [loading, setLoading] = useState(false);
     const [metadataExpanded, setMetadataExpanded] = useState(false);
     const imageRef = useRef<HTMLImageElement>(null);
@@ -54,16 +52,28 @@ const ModernImageViewer = forwardRef<ModernImageViewerRef, ModernImageViewerProp
       }
     }));
 
-    const fetchMetadata = async (path: string) => {
+    const fetchMetadata = useCallback(async (path: string) => {
       try {
         const response = await fetch(`/api/metadata?file=${encodeURIComponent(path)}`);
-        const data = await response.json();
+        const data: { metadata: FileMetadata } = await response.json();
         setMetadata(data.metadata);
       } catch (error) {
         console.error('Failed to fetch metadata:', error);
         setMetadata(null);
       }
-    };
+    }, []);
+
+    const handleNext = useCallback(() => {
+      if (currentIdx < files.length - 1) {
+        setCurrentIdx(currentIdx + 1);
+      }
+    }, [currentIdx, files.length, setCurrentIdx]);
+
+    const handlePrevious = useCallback(() => {
+      if (currentIdx > 0) {
+        setCurrentIdx(currentIdx - 1);
+      }
+    }, [currentIdx, setCurrentIdx]);
 
     useEffect(() => {
       const file = files[currentIdx];
@@ -75,7 +85,7 @@ const ModernImageViewer = forwardRef<ModernImageViewerRef, ModernImageViewerProp
           setLoading(true);
         }
       }
-    }, [currentIdx, files]); // Removed onFileChange from dependencies
+    }, [currentIdx, files, fetchMetadata, onFileChange]); // Removed onFileChange from dependencies
 
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -89,23 +99,7 @@ const ModernImageViewer = forwardRef<ModernImageViewerRef, ModernImageViewerProp
 
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [currentIdx, files.length]);
-
-    const handlePrevious = React.useCallback(() => {
-      if (currentIdx > 0) {
-        const newIdx = currentIdx - 1;
-        setCurrentIdx(newIdx);
-        // onFileChange will be called by useEffect when currentIdx changes
-      }
-    }, [currentIdx, setCurrentIdx]);
-
-    const handleNext = React.useCallback(() => {
-      if (currentIdx < files.length - 1) {
-        const newIdx = currentIdx + 1;
-        setCurrentIdx(newIdx);
-        // onFileChange will be called by useEffect when currentIdx changes
-      }
-    }, [currentIdx, files.length, setCurrentIdx]);
+    }, [currentIdx, files.length, handleNext, handlePrevious]);
 
     const handleFullscreen = () => {
       const isIPhone = /iPhone/i.test(navigator.userAgent);
@@ -116,14 +110,20 @@ const ModernImageViewer = forwardRef<ModernImageViewerRef, ModernImageViewerProp
       
       const el = imageRef.current;
       if (el) {
-        if (el.requestFullscreen) {
-          el.requestFullscreen();
-        } else if ((el as any).webkitEnterFullScreen) {
-          (el as any).webkitEnterFullScreen();
-        } else if ((el as any).msRequestFullscreen) {
-          (el as any).msRequestFullscreen();
-        } else if ((el as any).webkitRequestFullscreen) {
-          (el as any).webkitRequestFullscreen();
+        const element = el as HTMLImageElement & {
+          webkitEnterFullScreen?: () => void;
+          msRequestFullscreen?: () => void;
+          webkitRequestFullscreen?: () => void;
+        };
+        
+        if (element.requestFullscreen) {
+          element.requestFullscreen();
+        } else if (element.webkitEnterFullScreen) {
+          element.webkitEnterFullScreen();
+        } else if (element.msRequestFullscreen) {
+          element.msRequestFullscreen();
+        } else if (element.webkitRequestFullscreen) {
+          element.webkitRequestFullscreen();
         }
       }
     };
@@ -228,6 +228,7 @@ const ModernImageViewer = forwardRef<ModernImageViewerRef, ModernImageViewerProp
 
           {/* Media Content */}
           {(isImage || isHeic) && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               ref={imageRef}
               src={`/api/view?file=${encodeURIComponent(file.path)}`}

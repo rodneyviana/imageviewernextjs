@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
       const chunkSize = end - start + 1;
       const stream = fs.createReadStream(file, { start, end });
 
-      return new Response(stream as any, {
+      return new Response(stream as unknown as ReadableStream, {
         status: 206,
         headers: {
           'Content-Range': `bytes ${start}-${end}/${fileSize}`,
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
 
     // Default (non-range, non-video or static download)
     const stream = fs.createReadStream(file);
-    return new Response(stream as any, {
+    return new Response(stream as unknown as ReadableStream, {
       headers: {
         'Content-Type': contentType,
         'Content-Length': fileSize.toString(),

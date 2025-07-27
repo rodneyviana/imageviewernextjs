@@ -93,6 +93,7 @@ export default function ModernMainExplorer() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.slideshowRunning, state.currentIdx, state.files, state.slideshowFiles]);
 
   // Auto-expand parent folder when selection changes
@@ -179,6 +180,7 @@ export default function ModernMainExplorer() {
       
       return () => clearTimeout(timeoutId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selected, state.showNSFW, refreshChildren]);
 
   const updateCurrentIdx = React.useCallback((files: FileEntry[], selected: string | null) => {
@@ -438,6 +440,7 @@ export default function ModernMainExplorer() {
         if (!currentFile) return null;
         return (
           <div className="modern-fullscreen">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`/api/view?file=${encodeURIComponent(currentFile.path)}`}
               alt={currentFile?.name || 'Full screen image'}
@@ -517,7 +520,7 @@ export default function ModernMainExplorer() {
               <div className="modern-no-selection">
                 <i className="fas fa-images icon" />
                 <h3>No files found</h3>
-                <p>This folder doesn't contain any viewable files</p>
+                <p>This folder does not contain any viewable files</p>
               </div>
             ) : (
               <ModernImageViewer
@@ -526,7 +529,6 @@ export default function ModernMainExplorer() {
                 files={activeFiles}
                 currentIdx={state.currentIdx}
                 setCurrentIdx={handleSetCurrentIdx}
-                showNSFW={state.showNSFW}
                 onDelete={handleDelete}
                 onFlagNSFW={handleFlagNSFW}
                 onFileChange={handleFileChange}
