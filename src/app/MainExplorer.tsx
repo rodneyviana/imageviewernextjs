@@ -15,9 +15,9 @@ interface ImageViewerProps {
   files: FileEntry[];
   currentIdx: number;
   setCurrentIdx: (idx: number) => void;
-  showNSFW: boolean;
+  showFlagged: boolean;
   onDelete: (file: string) => void;
-  onFlagNSFW: (file: string, flag: boolean) => void;
+  onFlagged: (file: string, flag: boolean) => void;
   onFileChange: (file: string) => void;
   onShowiPhoneFullscreen: (file: FileEntry) => void;
   onToggleSlideshow: () => void;
@@ -127,7 +127,7 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
   };
 
   render() {
-    const { files, currentIdx, showNSFW, onDelete, onFlagNSFW } = this.props;
+    const { files, currentIdx, showFlagged, onDelete, onFlagged } = this.props;
     const { metadata, loading } = this.state;
     const file = files[currentIdx];
     if (file === undefined || file.name === undefined || !file.name.includes('.')) {
@@ -170,7 +170,7 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
           <button onClick={this.props.onToggleSlideshow} title="Slideshow">{this.props.slideshowRunning ? '❚❚' : '▶'}</button>
           <button onClick={() => window.open(`/api/download?file=${encodeURIComponent(file.path)}`)} title="Download">⬇️</button>
           <button onClick={this.handleFullscreen} title="Full Screen" className="icon-button" style={{ backgroundColor: '#fff', color: '#222', border: '2px solid #222' }}>⛶</button>
-          <button onClick={() => onFlagNSFW(file.path, !file.flagged)} title={file.flagged ? "Unflag" : "Flag"}>
+          <button onClick={() => onFlagged(file.path, !file.flagged)} title={file.flagged ? "Unflag" : "Flag"}>
             {file.flagged ? '\u{1F513}' : '\u{1F512}'}
           </button>
           <button onClick={() => onDelete(file.path)} title="Delete">🗑️</button>
@@ -204,7 +204,7 @@ class ImageViewer extends React.Component<ImageViewerProps, ImageViewerState> {
 // MainExplorer class component
 interface MainExplorerState {
   selected: string|null;
-  showNSFW: boolean;
+  showFlagged: boolean;
   confirmDelete: string|null;
   files: FileEntry[];
   currentIdx: number;
@@ -228,7 +228,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
   private imageViewerRef = React.createRef<ImageViewer>();
   state: MainExplorerState = {
     selected: null,
-    showNSFW: false,
+    showFlagged: false,
     confirmDelete: null,
     files: [],
     currentIdx: 0,
@@ -370,7 +370,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
         }
       }
 
-      if (!this.state.showNSFW) {
+      if (!this.state.showFlagged) {
         slideshowFiles = slideshowFiles.filter((f:FileEntry)=>!f.flagged);
       }
 
@@ -435,8 +435,8 @@ export default class MainExplorer extends React.Component<Record<string, never>,
   }
 
   componentDidUpdate(prevProps: Record<string, never>, prevState: MainExplorerState) {
-    // Only refresh children if we're not in slideshow mode or if showNSFW changed
-    if ((prevState.selected !== this.state.selected && !this.state.slideshowRunning) || prevState.showNSFW !== this.state.showNSFW) {
+    // Only refresh children if we're not in slideshow mode or if showFlagged changed
+    if ((prevState.selected !== this.state.selected && !this.state.slideshowRunning) || prevState.showFlagged !== this.state.showFlagged) {
       this.refreshChildren();
     }
 
@@ -548,7 +548,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     }
   };
 
-  handleFlagNSFW = async (file: string, flag: boolean) => {
+  handleFlagged = async (file: string, flag: boolean) => {
     const endpoint = flag ? 'flag' : 'unflag';
     await fetch(`/api/${endpoint}`, { method: 'POST', body: JSON.stringify({ file }), headers: { 'Content-Type':'application/json' } });
     
@@ -564,15 +564,15 @@ export default class MainExplorer extends React.Component<Record<string, never>,
         f.path === file ? { ...f, flagged: actualFlag } : f
       );
       
-      // Re-apply filtering logic for files array based on current showNSFW state
+      // Re-apply filtering logic for files array based on current showFlagged state
       let updatedFiles = updatedChildren.filter((c:FileEntry)=>c.type==='file');
-      if (!prev.showNSFW) updatedFiles = updatedFiles.filter((f:FileEntry)=>!f.flagged);
+      if (!prev.showFlagged) updatedFiles = updatedFiles.filter((f:FileEntry)=>!f.flagged);
       
-      // Re-apply filtering logic for slideshow files array based on current showNSFW state
+      // Re-apply filtering logic for slideshow files array based on current showFlagged state
       let updatedSlideshowFiles = prev.slideshowFiles.map(f => 
         f.path === file ? { ...f, flagged: actualFlag } : f
       );
-      if (!prev.showNSFW) updatedSlideshowFiles = updatedSlideshowFiles.filter((f:FileEntry)=>!f.flagged);
+      if (!prev.showFlagged) updatedSlideshowFiles = updatedSlideshowFiles.filter((f:FileEntry)=>!f.flagged);
       
       return {
         files: updatedFiles,
@@ -593,7 +593,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
     const data = await res.json();
     const children: FileEntry[] = data.children || [];
     let files = children.filter((c:FileEntry)=>c.type==='file');
-    if (!this.state.showNSFW) files = files.filter((f:FileEntry)=>!f.flagged);
+    if (!this.state.showFlagged) files = files.filter((f:FileEntry)=>!f.flagged);
     this.setState({ children, files }, () => {
       if (!this.state.slideshowRunning) {
         this.updateCurrentIdx();
@@ -651,7 +651,7 @@ export default class MainExplorer extends React.Component<Record<string, never>,
   };
 
   render() {
-    const { files, currentIdx, showNSFW, confirmDelete, selected, showiPhoneFullscreen, iPhoneFullscreenFile, sidebarVisible, slideshowRunning, children, slideshowFiles, slideshowLoading } = this.state;
+    const { files, currentIdx, showFlagged, confirmDelete, selected, showiPhoneFullscreen, iPhoneFullscreenFile, sidebarVisible, slideshowRunning, children, slideshowFiles, slideshowLoading } = this.state;
     // const isFolderSelected = selected && children.some(child => child.type === 'directory' && child.path === selected);
     
     // In slideshow mode, use slideshowFiles array, otherwise use regular files array
@@ -712,8 +712,8 @@ export default class MainExplorer extends React.Component<Record<string, never>,
               onSelect={this.handleSelect}
               onRefresh={this.refreshChildren}
               onSidebarRefresh={this.handleSidebarRefresh}
-              showNSFW={showNSFW}
-              onToggleNSFW={() => this.setState({ showNSFW: !showNSFW })}
+              showFlagged={showFlagged}
+              onToggleFlagged={() => this.setState({ showFlagged: !showFlagged })}
               style={{ width: '100%', height: '100%', flex: 1, padding: 0, margin: 0 }}
             />
           </div>
@@ -748,9 +748,9 @@ export default class MainExplorer extends React.Component<Record<string, never>,
                   this.stopSlideshow();
                   this.setState({ currentIdx: idx });
                 }}
-                showNSFW={showNSFW}
+                showFlagged={showFlagged}
                 onDelete={this.handleDelete}
-                onFlagNSFW={this.handleFlagNSFW}
+                onFlagged={this.handleFlagged}
                 onFileChange={(file) => this.setState({ selected: file })}
                 onShowiPhoneFullscreen={this.handleShowiPhoneFullscreen}
                 onToggleSlideshow={this.toggleSlideshow}

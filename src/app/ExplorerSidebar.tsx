@@ -59,7 +59,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
 
    
   componentDidUpdate(prevProps: any, prevState: FolderTreeState) {
-    if (prevProps.showNSFW !== this.props.showNSFW) {
+    if (prevProps.showFlagged !== this.props.showFlagged) {
       this.clearCache();
     }
     // Load children on expansion
@@ -93,7 +93,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
    
   renderNode = (node: any, level = 0): React.ReactNode => {
     const { folderChildren, expanded } = this.state;
-    const { onSelect, selected, showNSFW } = this.props;
+    const { onSelect, selected, showFlagged } = this.props;
     if (node.type === 'folder') {
       const isOpen = expanded[node.path];
       const children = folderChildren[node.path] || node.children || [];
@@ -111,7 +111,7 @@ class FolderTree extends React.Component<any, FolderTreeState> {
         </div>
       );
     } else if (node.type === 'file') {
-      if (!showNSFW && node.flagged) return null;
+      if (!showFlagged && node.flagged) return null;
       
       // Determine file type and icon
       let icon = '🖼️'; // default for images
@@ -218,7 +218,7 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
   };
 
   render() {
-    const { onSelect, selected, showNSFW, onToggleNSFW } = this.props;
+    const { onSelect, selected, showFlagged, onToggleFlagged } = this.props;
     const { tree, loading } = this.state;
 
     return (
@@ -227,11 +227,11 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
           <span className="explorer-sidebar-title">Root</span>
           <button onClick={this.fullRefresh} title="Refresh">🔄</button>
           <button
-            onClick={() => onToggleNSFW()}
-            title={showNSFW ? "Hide flagged images" : "Show flagged images"}
+            onClick={() => onToggleFlagged()}
+            title={showFlagged ? "Hide flagged images" : "Show flagged images"}
             className="ml-2 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
           >
-            {showNSFW ? "Hide flagged" : "Show flagged"}
+            {showFlagged ? "Hide flagged" : "Show flagged"}
           </button>
         </div>
         {loading ? (
@@ -242,7 +242,7 @@ export default class ExplorerSidebar extends React.Component<any, ExplorerSideba
             tree={tree}
             onSelect={onSelect}
             selected={selected}
-            showNSFW={showNSFW}
+            showFlagged={showFlagged}
             onCacheClearReady={this.setCacheClear}
             onFileFlagReady={this.updateFileFlag}
             onExpandFolderReady={this.setExpandFolder}

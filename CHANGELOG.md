@@ -2,6 +2,13 @@
 
 All notable changes to the Media Explorer project will be documented in this file.
 
+## [1.2.1] - 2025-01-27
+
+### Fixed
+- **Component Property Names**: Updated remaining NSFW references to Flagged in ExplorerSidebar.tsx and MainExplorer.tsx
+- **Modern UI Comments**: Updated code comments in ModernMainExplorer.tsx to use consistent flagged terminology
+- **Property Consistency**: Ensured all component props use `showFlagged` and `onToggleFlagged` instead of legacy NSFW naming
+
 ## [1.2.0] - 2025-07-27
 
 ### Changed

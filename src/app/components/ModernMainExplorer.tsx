@@ -170,7 +170,7 @@ export default function ModernMainExplorer() {
     }
   }, [state.selected, state.showFlagged, state.slideshowRunning, state.files]);
 
-  // Refresh children when selection or NSFW toggle changes
+  // Refresh children when selection or flagged toggle changes
   useEffect(() => {
     if (!state.slideshowRunning) {
       // Debounce rapid changes to prevent flickering
@@ -421,7 +421,7 @@ export default function ModernMainExplorer() {
         };
       });
     } catch (error) {
-      console.error('Failed to flag/unflag NSFW:', error);
+      console.error('Failed to flag/unflag:', error);
     }
   };
 
